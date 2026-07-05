@@ -1,6 +1,6 @@
 /* ===========================================================
-   GEMELO DIGITAL DE CENTRIFUGACIÓN - DISEÑO INDUSTRIAL V3
-   (INCLUYE ZOOM TÁCTIL Y COLORES DIFERENCIALES EN TORTA)
+   GEMELO DIGITAL DE CENTRIFUGACIÓN - ALTO RENDIMIENTO V4
+   (FIX: Pausa instantánea, Anti-Lag de GPU y Zoom Táctil)
 =========================================================== */
 
 let running = false;
@@ -27,14 +27,14 @@ let process = {
     cakeThickness: 0 
 };
 
-// Población de partículas
+// Población
 let PARTICLES_COUNT = 350; 
 let DRUM_MAX_RADIUS = 0.29; 
 const MAX_CAKE_THICKNESS = 0.04; 
 let particles = [];
 const rho_fluid = 1000; 
 
-// Elementos del DOM
+// Elementos DOM
 const rotor = document.getElementById("rotor");
 const marker = document.getElementById("hiroMarker");
 const loader = document.getElementById("loader");
@@ -90,7 +90,7 @@ const loaderAnimation = setInterval(() => {
     if (loaderProgress) loaderProgress.style.width = load + "%";
 }, 60);
 
-// Eventos de Interfaz
+// Eventos Interfaz
 if (document.getElementById("dashboardHandle")) document.getElementById("dashboardHandle").addEventListener("click", () => dashboard.classList.toggle("open"));
 if (btnMenu) btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
 
@@ -150,22 +150,22 @@ function calculatePhysics() {
     else process.flowRegime = "Turbulento";
 }
 
-const ACCELERATION = 200;
-const DECELERATION = 250;
+const ACCELERATION = 250;
 function updateRotor(delta) {
-    if(running) {
-        if(currentRPM < targetRPM) currentRPM += ACCELERATION * delta;
-        if(currentRPM > targetRPM) currentRPM = targetRPM;
-    } else {
-        if(currentRPM > 0) currentRPM -= DECELERATION * delta;
-        if(currentRPM < 0) currentRPM = 0;
+    // Si cambiamos el slider mientras corre, se ajusta suavemente
+    if (currentRPM < targetRPM) {
+        currentRPM += ACCELERATION * delta;
+        if (currentRPM > targetRPM) currentRPM = targetRPM;
+    } else if (currentRPM > targetRPM) {
+        currentRPM -= ACCELERATION * delta;
+        if (currentRPM < targetRPM) currentRPM = targetRPM;
     }
     rotorAngle += (currentRPM * 6) * delta; 
     if (rotor) rotor.setAttribute("rotation", `0 ${rotorAngle} 0`);
 }
 
 /* ===========================================================
-   SISTEMA DE PARTÍCULAS
+   SISTEMA DE PARTÍCULAS (OPTIMIZADO PARA GPU)
 =========================================================== */
 function createParticles() {
     const container = document.getElementById("particles1");
@@ -184,8 +184,8 @@ function createParticles() {
         const y = (Math.random() * 0.38) - 0.19; 
         
         const baseSize = isTypeA ? 0.005 : 0.003;
-        const color = isTypeA ? "#ff5252" : "#7c4dff"; // Rojo claro o Morado claro
-        const cakeColor = isTypeA ? "#991b1b" : "#4c1d95"; // Rojo oscuro o Morado oscuro (para la torta)
+        const color = isTypeA ? "#ff5252" : "#7c4dff"; 
+        const cakeColor = isTypeA ? "#991b1b" : "#4c1d95"; 
         
         p.setAttribute("radius", baseSize * currentScale);
         p.setAttribute("color", color);
@@ -212,19 +212,22 @@ function updateEngineeringParticles(delta) {
     if (PARTICLES_COUNT === 0) return; 
     
     let sedimentedCount = 0;
+    
+    // PRE-CÁLCULOS: Sacamos estas matemáticas del bucle masivo para evitar Lag
     const n_exponent = process.reynoldsParticle < 0.2 ? 4.65 : 2.5;
+    const vFree = process.nominalStokesVelocity * Math.pow((1 - 0.05), n_exponent);
+    const vDense = process.nominalStokesVelocity * Math.pow((1 - 0.45), n_exponent);
+    
+    const omegaSq = process.omega * process.omega;
+    const nomAccel = process.nominalAcceleration;
+    const currentRadiusLimit = DRUM_MAX_RADIUS - process.cakeThickness;
 
     particles.forEach(p => {
-        const currentRadiusLimit = DRUM_MAX_RADIUS - process.cakeThickness;
-
-        if (running && p.state === "free") {
-            const localAcceleration = process.omega * process.omega * p.r;
-            const positionCorrection = process.nominalAcceleration > 0 ? (localAcceleration / process.nominalAcceleration) : 0;
+        if (p.state === "free") {
+            const localAcceleration = omegaSq * p.r;
+            const positionCorrection = nomAccel > 0 ? (localAcceleration / nomAccel) : 0;
             
-            let localPhi = 0.05; 
-            if (p.r > currentRadiusLimit - 0.02) localPhi = 0.45; 
-
-            const hinderedVelocity = process.nominalStokesVelocity * Math.pow((1 - localPhi), n_exponent);
+            const hinderedVelocity = (p.r > currentRadiusLimit - 0.02) ? vDense : vFree;
             const sizeMultiplier = p.type === 'A' ? 1.0 : 0.35;
             
             p.r += (hinderedVelocity * sizeMultiplier * positionCorrection) * delta * 25; 
@@ -232,24 +235,25 @@ function updateEngineeringParticles(delta) {
             if (p.r >= currentRadiusLimit) {
                 p.r = currentRadiusLimit;
                 p.state = "cake"; 
-                // SOLUCIÓN COLOR: Ahora cambian a un tono oscuro de su propio color
-                p.entity.setAttribute("color", p.cakeColor); 
+                
+                // ANTI-LAG: Modificamos el material 3D directamente en la GPU, evitamos el DOM.
+                const mesh = p.entity.getObject3D('mesh');
+                if (mesh && mesh.material) {
+                    mesh.material.color.set(p.cakeColor);
+                }
             }
         }
         
-        if(p.state === "cake") {
+        if (p.state === "cake") {
             sedimentedCount++;
             p.r = currentRadiusLimit; 
         }
 
-        const x = Math.cos(p.angle) * p.r;
-        const z = Math.sin(p.angle) * p.r;
-        p.entity.object3D.position.set(x, p.y, z);
+        // Actualización de posición final
+        p.entity.object3D.position.set(Math.cos(p.angle) * p.r, p.y, Math.sin(p.angle) * p.r);
     });
 
-    if (running) {
-        process.cakeThickness = (sedimentedCount / PARTICLES_COUNT) * MAX_CAKE_THICKNESS;
-    }
+    process.cakeThickness = (sedimentedCount / PARTICLES_COUNT) * MAX_CAKE_THICKNESS;
 }
 
 function resetParticles() {
@@ -257,12 +261,17 @@ function resetParticles() {
     particles.forEach(p => {
         p.r = 0.02 + Math.random() * (DRUM_MAX_RADIUS - 0.1);
         p.state = "free";
-        p.entity.setAttribute("color", p.originalColor);
+        
+        // Regresar color por GPU
+        const mesh = p.entity.getObject3D('mesh');
+        if (mesh && mesh.material) mesh.material.color.set(p.originalColor);
+        
+        p.entity.object3D.position.set(Math.cos(p.angle) * p.r, p.y, Math.sin(p.angle) * p.r);
     });
 }
 
 /* ===========================================================
-   EVENTOS DE LOS CONTROLES DESLIZANTES
+   EVENTOS BOTONES Y CONTROLES DESLIZANTES
 =========================================================== */
 if (btnStart) btnStart.addEventListener("click", () => { running = true; startTimer(); });
 if (btnPause) btnPause.addEventListener("click", () => { running = false; stopTimer(); });
@@ -274,6 +283,7 @@ if (btnReset) {
         if (rotor) rotor.setAttribute("rotation", "0 0 0");
         resetParticles();
         resetTimer();
+        updateDashboard();
     });
 }
 
@@ -338,7 +348,7 @@ if (document.getElementById("viscositySlider")) {
 }
 
 /* ===========================================================
-   SISTEMA DE CONTROL: ROTACIÓN LIBRE Y ZOOM (NUEVO)
+   SISTEMA DE CONTROL: ROTACIÓN LIBRE Y ZOOM
 =========================================================== */
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
@@ -348,8 +358,6 @@ const centrifugeContainer = document.getElementById("centrifuge");
 
 function startDrag(e) {
     if (e.target.closest('#dashboard') || e.target.closest('#floatingButtons') || e.target.closest('#infoModal')) return;
-    
-    // Evitar iniciar rotación si el usuario está haciendo pinza (2 dedos)
     if (e.touches && e.touches.length >= 2) return; 
 
     isDragging = true;
@@ -358,17 +366,16 @@ function startDrag(e) {
 
 function stopDrag(e) { 
     isDragging = false; 
-    initialPinchDistance = null; // Reiniciar medida de zoom al soltar
+    initialPinchDistance = null; 
 }
 
 function drag(e) {
     if (!centrifugeContainer) return;
 
-    // GESTIÓN DEL ZOOM EN CELULARES (PELLIZCO CON 2 DEDOS)
+    // ZOOM CELULAR (Pellizco)
     if (e.touches && e.touches.length === 2) {
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
-        // Calcular la distancia entre los dos dedos
         const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
 
         if (initialPinchDistance == null) {
@@ -376,14 +383,14 @@ function drag(e) {
         } else {
             const delta = dist - initialPinchDistance;
             currentZoom += delta * 0.005; 
-            currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); // Limitar zoom entre 0.4x y 3.0x
+            currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); 
             centrifugeContainer.setAttribute("scale", `${currentZoom} ${currentZoom} ${currentZoom}`);
             initialPinchDistance = dist; 
         }
-        return; // Salir para no mezclar rotación con zoom
+        return; 
     }
 
-    // GESTIÓN DE LA ROTACIÓN TÁCTIL/MOUSE (1 DEDO O CLIC)
+    // ROTACIÓN (Arrastre)
     if (!isDragging) return; 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -399,16 +406,15 @@ function drag(e) {
     previousMousePosition = { x: clientX, y: clientY };
 }
 
-// GESTIÓN DEL ZOOM EN COMPUTADOR (RUEDA DEL RATÓN)
+// ZOOM COMPUTADOR (Rueda del ratón)
 document.addEventListener("wheel", (e) => {
     if (e.target.closest('#dashboard') || e.target.closest('#floatingButtons') || e.target.closest('#infoModal')) return;
     
     currentZoom += e.deltaY * -0.001;
-    currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); // Límite de zoom
+    currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); 
     if (centrifugeContainer) centrifugeContainer.setAttribute("scale", `${currentZoom} ${currentZoom} ${currentZoom}`);
 });
 
-// Asignación de Eventos
 document.addEventListener("mousedown", startDrag);
 document.addEventListener("mouseup", stopDrag);
 document.addEventListener("mousemove", drag);
@@ -417,18 +423,27 @@ document.addEventListener("touchend", stopDrag);
 document.addEventListener("touchmove", drag, { passive: false });
 
 /* ===========================================================
-   MOTOR DE ANIMACIÓN Y FÍSICA
+   NÚCLEO DE ANIMACIÓN Y FÍSICA
 =========================================================== */
 let previousTime = performance.now();
+
 function animate(now) {
-    const delta = (now - previousTime) / 1000;
+    let delta = (now - previousTime) / 1000;
     previousTime = now;
     
-    calculatePhysics();
-    updateRotor(delta);
-    updateEngineeringParticles(delta);
-    updateDashboard();
+    // ANTI-LAG GEOMÉTRICO: Límite de salto por caída de frames
+    if (delta > 0.1) delta = 0.1; 
+
+    // Calculamos la física siempre, para que el panel se actualice al instante al mover un slider
+    calculatePhysics(); 
+
+    // CONGELAMIENTO INSTANTÁNEO: Solo rotamos y movemos partículas si está en Play
+    if (running) {
+        updateRotor(delta);
+        updateEngineeringParticles(delta);
+    }
     
+    updateDashboard();
     requestAnimationFrame(animate);
 }
 
