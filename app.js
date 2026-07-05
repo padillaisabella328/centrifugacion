@@ -1,5 +1,5 @@
 /* ===========================================================
-   GEMELO DIGITAL DE CENTRIFUGACIÓN - MODELO DE INGENIERÍA V2
+   GEMELO DIGITAL DE CENTRIFUGACIÓN - DISEÑO INDUSTRIAL
 =========================================================== */
 
 let running = false;
@@ -16,17 +16,22 @@ let process = {
     radius : 0.30,
     densityDifference : 800,
     particleDiameter : 40,
-    viscosity : 1.0, // en cP
+    viscosity : 1.0, 
     omega : 0,
     factorG : 0,
     nominalAcceleration : 0,
     nominalStokesVelocity : 0,
     reynoldsParticle : 0,
     flowRegime : "Laminar",
-    cakeThickness: 0 // Espesor de la torta sólida (m)
+    cakeThickness: 0 
 };
 
-const rho_fluid = 1000; // Densidad base del agua (kg/m³)
+// Variable dinámica para la cantidad de partículas (ahora controlable)
+let PARTICLES_COUNT = 350; 
+let DRUM_MAX_RADIUS = 0.29; 
+const MAX_CAKE_THICKNESS = 0.04; 
+let particles = [];
+const rho_fluid = 1000; 
 
 // Elementos del DOM
 const rotor = document.getElementById("rotor");
@@ -46,7 +51,6 @@ const statusText = document.getElementById("statusText");
 const timer = document.getElementById("timer");
 
 function updateDashboard() {
-    // Verificaciones de seguridad para evitar que el JS se rompa si el HTML tarda en renderizar
     const omegaEl = document.getElementById("omegaValue");
     const gEl = document.getElementById("gValue");
     const velEl = document.getElementById("velocityValue");
@@ -86,16 +90,12 @@ const loaderAnimation = setInterval(() => {
 }, 60);
 
 // UI Events
-if (document.getElementById("dashboardHandle")) {
-    document.getElementById("dashboardHandle").addEventListener("click", () => dashboard.classList.toggle("open"));
-}
+if (document.getElementById("dashboardHandle")) document.getElementById("dashboardHandle").addEventListener("click", () => dashboard.classList.toggle("open"));
 if (btnMenu) btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
 
 const infoModal = document.getElementById("infoModal");
 if (btnInfo) btnInfo.onclick = () => infoModal.style.display = "flex";
-if (document.getElementById("closeInfo")) {
-    document.getElementById("closeInfo").onclick = () => infoModal.style.display = "none";
-}
+if (document.getElementById("closeInfo")) document.getElementById("closeInfo").onclick = () => infoModal.style.display = "none";
 window.onclick = (e) => { if(e.target === infoModal) infoModal.style.display = "none"; };
 
 if (marker) {
@@ -164,19 +164,19 @@ function updateRotor(delta) {
 }
 
 /* ===========================================================
-   SISTEMA DE PARTÍCULAS: RICHARDSON-ZAKI Y COMPACTACIÓN
+   GENERACIÓN Y DINÁMICA DE PARTÍCULAS
 =========================================================== */
-const PARTICLES_COUNT = 300; 
-let DRUM_MAX_RADIUS = 0.29; 
-const MAX_CAKE_THICKNESS = 0.04; 
-let particles = [];
-
 function createParticles() {
     const container = document.getElementById("particles1");
     if (!container) return;
+    
+    // Limpiar el contenedor antes de crear nuevas (para el control de cantidad)
     container.innerHTML = "";
     particles = [];
     
+    // Factor de escala actual del diámetro de partícula
+    const currentScale = process.particleDiameter / 40;
+
     for (let i = 0; i < PARTICLES_COUNT; i++) {
         const p = document.createElement("a-sphere");
         const isTypeA = i % 2 === 0; 
@@ -188,8 +188,10 @@ function createParticles() {
         const baseSize = isTypeA ? 0.005 : 0.003;
         const color = isTypeA ? "#ff5252" : "#7c4dff"; 
         
-        p.setAttribute("radius", baseSize);
+        // Aplicamos el tamaño ajustado de inmediato
+        p.setAttribute("radius", baseSize * currentScale);
         p.setAttribute("color", color);
+        p.setAttribute("metalness", "0.2"); // Darle un ligero brillo
         
         p.object3D.position.set(Math.cos(angle)*r, y, Math.sin(angle)*r);
         container.appendChild(p);
@@ -208,6 +210,8 @@ function createParticles() {
 }
 
 function updateEngineeringParticles(delta) {
+    if (PARTICLES_COUNT === 0) return; // Evitar división por cero
+    
     let sedimentedCount = 0;
     const n_exponent = process.reynoldsParticle < 0.2 ? 4.65 : 2.5;
 
@@ -229,7 +233,7 @@ function updateEngineeringParticles(delta) {
             if (p.r >= currentRadiusLimit) {
                 p.r = currentRadiusLimit;
                 p.state = "cake"; 
-                p.entity.setAttribute("color", "#4e342e"); 
+                p.entity.setAttribute("color", "#334155"); // Gris oscuro industrial para la torta
             }
         }
         
@@ -301,6 +305,16 @@ if (document.getElementById("radiusSlider")) {
     });
 }
 
+// CONTROL DINÁMICO DE POBLACIÓN DE PARTÍCULAS
+if (document.getElementById("particleCountSlider")) {
+    document.getElementById("particleCountSlider").addEventListener("input", (e) => {
+        PARTICLES_COUNT = Number(e.target.value);
+        document.getElementById("particleCountValue").textContent = PARTICLES_COUNT + " unidades";
+        process.cakeThickness = 0; // Reiniciamos la torta al cambiar la población
+        createParticles(); // Recreamos el universo de partículas
+    });
+}
+
 if (document.getElementById("densitySlider")) {
     document.getElementById("densitySlider").addEventListener("input", (e) => {
         process.densityDifference = Number(e.target.value);
@@ -342,6 +356,7 @@ function drag(e) {
     const deltaMove = { x: clientX - previousMousePosition.x, y: clientY - previousMousePosition.y };
     const currentRotation = centrifugeContainer.getAttribute("rotation");
     
+    // Rotación libre táctil limitando la velocidad con 0.5
     centrifugeContainer.setAttribute("rotation", {
         x: currentRotation.x + deltaMove.y * 0.5,
         y: currentRotation.y + deltaMove.x * 0.5,
