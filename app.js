@@ -1,5 +1,5 @@
 /* ===========================================================
-   GEMELO DIGITAL DE CENTRIFUGACIÓN - MODELO DE INGENIERÍA
+   GEMELO DIGITAL DE CENTRIFUGACIÓN - MODELO DE INGENIERÍA V2
 =========================================================== */
 
 let running = false;
@@ -34,7 +34,6 @@ const marker = document.getElementById("hiroMarker");
 const loader = document.getElementById("loader");
 const loaderProgress = document.getElementById("loaderProgress");
 const dashboard = document.getElementById("dashboard");
-const dashboardHandle = document.getElementById("dashboardHandle");
 
 const btnStart = document.getElementById("btnStart");
 const btnPause = document.getElementById("btnPause");
@@ -47,22 +46,31 @@ const statusText = document.getElementById("statusText");
 const timer = document.getElementById("timer");
 
 function updateDashboard() {
-    document.getElementById("omegaValue").textContent = process.omega.toFixed(1);
-    document.getElementById("gValue").textContent = process.factorG.toFixed(0);
-    document.getElementById("velocityValue").textContent = (process.nominalStokesVelocity * 1000).toFixed(2);
-    
-    // Formateo del Reynolds para evitar notación científica extrema
-    let reFormat = process.reynoldsParticle < 0.01 ? process.reynoldsParticle.toExponential(2) : process.reynoldsParticle.toFixed(3);
-    document.getElementById("reynoldsValue").textContent = reFormat;
-    
-    // Indicador de Régimen
-    const regimeEl = document.getElementById("regimeValue");
-    regimeEl.textContent = process.flowRegime;
-    if(process.flowRegime === "Laminar") regimeEl.style.color = "#32d26b"; // Verde
-    else if(process.flowRegime === "Transición") regimeEl.style.color = "#ffc107"; // Amarillo
-    else regimeEl.style.color = "#ff4545"; // Rojo
+    // Verificaciones de seguridad para evitar que el JS se rompa si el HTML tarda en renderizar
+    const omegaEl = document.getElementById("omegaValue");
+    const gEl = document.getElementById("gValue");
+    const velEl = document.getElementById("velocityValue");
+    const reyEl = document.getElementById("reynoldsValue");
+    const regEl = document.getElementById("regimeValue");
+    const cakeEl = document.getElementById("cakeValue");
 
-    document.getElementById("cakeValue").textContent = (process.cakeThickness * 1000).toFixed(1);
+    if (omegaEl) omegaEl.textContent = process.omega.toFixed(1);
+    if (gEl) gEl.textContent = process.factorG.toFixed(0);
+    if (velEl) velEl.textContent = (process.nominalStokesVelocity * 1000).toFixed(2);
+    
+    if (reyEl) {
+        let reFormat = process.reynoldsParticle < 0.01 ? process.reynoldsParticle.toExponential(2) : process.reynoldsParticle.toFixed(3);
+        reyEl.textContent = reFormat;
+    }
+    
+    if (regEl) {
+        regEl.textContent = process.flowRegime;
+        if(process.flowRegime === "Laminar") regEl.style.color = "#32d26b";
+        else if(process.flowRegime === "Transición") regEl.style.color = "#ffc107";
+        else regEl.style.color = "#ff4545";
+    }
+
+    if (cakeEl) cakeEl.textContent = (process.cakeThickness * 1000).toFixed(1);
 }
 
 // Loader
@@ -74,30 +82,40 @@ const loaderAnimation = setInterval(() => {
         clearInterval(loaderAnimation);
         setTimeout(() => { loader.style.opacity = "0"; setTimeout(() => loader.style.display = "none", 600); }, 300);
     }
-    loaderProgress.style.width = load + "%";
+    if (loaderProgress) loaderProgress.style.width = load + "%";
 }, 60);
 
 // UI Events
-dashboardHandle.addEventListener("click", () => dashboard.classList.toggle("open"));
-btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
+if (document.getElementById("dashboardHandle")) {
+    document.getElementById("dashboardHandle").addEventListener("click", () => dashboard.classList.toggle("open"));
+}
+if (btnMenu) btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
 
 const infoModal = document.getElementById("infoModal");
-btnInfo.onclick = () => infoModal.style.display = "flex";
-document.getElementById("closeInfo").onclick = () => infoModal.style.display = "none";
+if (btnInfo) btnInfo.onclick = () => infoModal.style.display = "flex";
+if (document.getElementById("closeInfo")) {
+    document.getElementById("closeInfo").onclick = () => infoModal.style.display = "none";
+}
 window.onclick = (e) => { if(e.target === infoModal) infoModal.style.display = "none"; };
 
-marker.addEventListener("markerFound", () => {
-    markerDetected = true;
-    statusText.textContent = "Tambor detectado";
-    statusLed.style.background = "#32d26b";
-    statusLed.style.boxShadow = "0 0 18px #32d26b";
-});
-marker.addEventListener("markerLost", () => {
-    markerDetected = false;
-    statusText.textContent = "Buscando marcador";
-    statusLed.style.background = "#ff4545";
-    statusLed.style.boxShadow = "0 0 18px #ff4545";
-});
+if (marker) {
+    marker.addEventListener("markerFound", () => {
+        markerDetected = true;
+        if (statusText) statusText.textContent = "Tambor detectado";
+        if (statusLed) {
+            statusLed.style.background = "#32d26b";
+            statusLed.style.boxShadow = "0 0 18px #32d26b";
+        }
+    });
+    marker.addEventListener("markerLost", () => {
+        markerDetected = false;
+        if (statusText) statusText.textContent = "Buscando marcador";
+        if (statusLed) {
+            statusLed.style.background = "#ff4545";
+            statusLed.style.boxShadow = "0 0 18px #ff4545";
+        }
+    });
+}
 
 function startTimer() {
     clearInterval(timerInterval);
@@ -106,11 +124,11 @@ function startTimer() {
         const h = Math.floor(elapsedTime / 3600);
         const m = Math.floor((elapsedTime % 3600) / 60);
         const s = elapsedTime % 60;
-        timer.textContent = String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+        if (timer) timer.textContent = String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
     }, 1000);
 }
 function stopTimer() { clearInterval(timerInterval); }
-function resetTimer() { elapsedTime = 0; timer.textContent = "00:00:00"; }
+function resetTimer() { elapsedTime = 0; if (timer) timer.textContent = "00:00:00"; }
 
 /* ===========================================================
    CÁLCULOS TERMODINÁMICOS Y DE TRANSPORTE
@@ -121,15 +139,11 @@ function calculatePhysics() {
     process.factorG = process.nominalAcceleration / gravity;
     
     const dp_meters = process.particleDiameter * 1e-6;
-    const mu_pascales = process.viscosity * 0.001; // cP a Pa·s
+    const mu_pascales = process.viscosity * 0.001; 
 
-    // Ley de Stokes en el radio máximo (referencia nominal)
     process.nominalStokesVelocity = (process.densityDifference * process.nominalAcceleration * Math.pow(dp_meters, 2)) / (18 * mu_pascales);
-    
-    // Cálculo del Número de Reynolds de la Partícula (Re_p = rho * v * dp / mu)
     process.reynoldsParticle = (rho_fluid * process.nominalStokesVelocity * dp_meters) / mu_pascales;
 
-    // Determinación del Régimen Fluido
     if (process.reynoldsParticle < 0.2) process.flowRegime = "Laminar";
     else if (process.reynoldsParticle < 500) process.flowRegime = "Transición";
     else process.flowRegime = "Turbulento";
@@ -146,19 +160,21 @@ function updateRotor(delta) {
         if(currentRPM < 0) currentRPM = 0;
     }
     rotorAngle += (currentRPM * 6) * delta; 
-    rotor.setAttribute("rotation", `0 ${rotorAngle} 0`);
+    if (rotor) rotor.setAttribute("rotation", `0 ${rotorAngle} 0`);
 }
 
 /* ===========================================================
    SISTEMA DE PARTÍCULAS: RICHARDSON-ZAKI Y COMPACTACIÓN
 =========================================================== */
-const PARTICLES_COUNT = 350; 
+const PARTICLES_COUNT = 300; 
 let DRUM_MAX_RADIUS = 0.29; 
-const MAX_CAKE_THICKNESS = 0.04; // Espesor máximo de la torta (m)
+const MAX_CAKE_THICKNESS = 0.04; 
 let particles = [];
 
 function createParticles() {
     const container = document.getElementById("particles1");
+    if (!container) return;
+    container.innerHTML = "";
     particles = [];
     
     for (let i = 0; i < PARTICLES_COUNT; i++) {
@@ -193,44 +209,32 @@ function createParticles() {
 
 function updateEngineeringParticles(delta) {
     let sedimentedCount = 0;
-
-    // Exponente empírico de Richardson-Zaki basado en el régimen
     const n_exponent = process.reynoldsParticle < 0.2 ? 4.65 : 2.5;
 
     particles.forEach(p => {
-        // Límite de colisión actual: Radio del tambor menos el espesor de la torta compactada
         const currentRadiusLimit = DRUM_MAX_RADIUS - process.cakeThickness;
 
         if (running && p.state === "free") {
-            // 1. Aceleración Radial Dinámica (a = w²*r)
             const localAcceleration = process.omega * process.omega * p.r;
             const positionCorrection = process.nominalAcceleration > 0 ? (localAcceleration / process.nominalAcceleration) : 0;
             
-            // 2. Modelo de Sedimentación Impedida (Aproximación por zonas)
-            // A medida que se acercan a la torta, la concentración local de partículas aumenta (phi)
-            let localPhi = 0.05; // Por defecto fluido claro
-            if (p.r > currentRadiusLimit - 0.02) localPhi = 0.45; // Zona de transición densa cerca de la pared
+            let localPhi = 0.05; 
+            if (p.r > currentRadiusLimit - 0.02) localPhi = 0.45; 
 
             const hinderedVelocity = process.nominalStokesVelocity * Math.pow((1 - localPhi), n_exponent);
-            
-            // Diferencial de tamaño de partícula
             const sizeMultiplier = p.type === 'A' ? 1.0 : 0.35;
             
-            // Integración de posición
             p.r += (hinderedVelocity * sizeMultiplier * positionCorrection) * delta * 25; 
             
-            // 3. Formación de la Torta Sólida
             if (p.r >= currentRadiusLimit) {
                 p.r = currentRadiusLimit;
                 p.state = "cake"; 
-                // Al compactarse, pierden su color y se vuelven parte de la torta oscura
                 p.entity.setAttribute("color", "#4e342e"); 
             }
         }
         
         if(p.state === "cake") {
             sedimentedCount++;
-            // Aseguramos que la torta gire adherida a la pared y respete el crecimiento
             p.r = currentRadiusLimit; 
         }
 
@@ -239,7 +243,6 @@ function updateEngineeringParticles(delta) {
         p.entity.object3D.position.set(x, p.y, z);
     });
 
-    // Calcular el crecimiento de la torta (relación geométrica del volumen sedimentado)
     if (running) {
         process.cakeThickness = (sedimentedCount / PARTICLES_COUNT) * MAX_CAKE_THICKNESS;
     }
@@ -257,52 +260,69 @@ function resetParticles() {
 /* ===========================================================
    EVENTOS SLIDERS Y ROTACIÓN TÁCTIL
 =========================================================== */
-btnStart.addEventListener("click", () => { running = true; startTimer(); });
-btnPause.addEventListener("click", () => { running = false; stopTimer(); });
-btnReset.addEventListener("click", () => {
-    running = false;
-    currentRPM = 0;
-    rotorAngle = 0;
-    rotor.setAttribute("rotation", "0 0 0");
-    resetParticles();
-    resetTimer();
-});
+if (btnStart) btnStart.addEventListener("click", () => { running = true; startTimer(); });
+if (btnPause) btnPause.addEventListener("click", () => { running = false; stopTimer(); });
+if (btnReset) {
+    btnReset.addEventListener("click", () => {
+        running = false;
+        currentRPM = 0;
+        rotorAngle = 0;
+        if (rotor) rotor.setAttribute("rotation", "0 0 0");
+        resetParticles();
+        resetTimer();
+    });
+}
 
-document.getElementById("rpmSlider").addEventListener("input", (e) => {
-    targetRPM = Number(e.target.value);
-    document.getElementById("rpmValue").textContent = targetRPM + " RPM";
-});
+if (document.getElementById("rpmSlider")) {
+    document.getElementById("rpmSlider").addEventListener("input", (e) => {
+        targetRPM = Number(e.target.value);
+        document.getElementById("rpmValue").textContent = targetRPM + " RPM";
+    });
+}
 
-document.getElementById("radiusSlider").addEventListener("input", (e) => {
-    process.radius = Number(e.target.value);
-    document.getElementById("radiusValue").textContent = process.radius.toFixed(2) + " m";
-    
-    document.getElementById("drumWall").setAttribute("radius", process.radius);
-    document.getElementById("drumBase").setAttribute("radius", process.radius);
-    document.getElementById("drumRing").setAttribute("radius", process.radius);
-    
-    DRUM_MAX_RADIUS = process.radius - 0.01;
-    document.getElementById("fluid").setAttribute("radius", DRUM_MAX_RADIUS);
-    
-    particles.forEach(p => { if (p.r > DRUM_MAX_RADIUS) p.r = DRUM_MAX_RADIUS; });
-});
+if (document.getElementById("radiusSlider")) {
+    document.getElementById("radiusSlider").addEventListener("input", (e) => {
+        process.radius = Number(e.target.value);
+        document.getElementById("radiusValue").textContent = process.radius.toFixed(2) + " m";
+        
+        const dWall = document.getElementById("drumWall");
+        const dBase = document.getElementById("drumBase");
+        const dRing = document.getElementById("drumRing");
+        const fld = document.getElementById("fluid");
 
-document.getElementById("densitySlider").addEventListener("input", (e) => {
-    process.densityDifference = Number(e.target.value);
-    document.getElementById("densityValue").textContent = process.densityDifference + " kg/m³";
-});
+        if (dWall) dWall.setAttribute("radius", process.radius);
+        if (dBase) dBase.setAttribute("radius", process.radius);
+        if (dRing) dRing.setAttribute("radius", process.radius);
+        
+        DRUM_MAX_RADIUS = process.radius - 0.01;
+        if (fld) fld.setAttribute("radius", DRUM_MAX_RADIUS);
+        
+        particles.forEach(p => { if (p.r > DRUM_MAX_RADIUS) p.r = DRUM_MAX_RADIUS; });
+    });
+}
 
-document.getElementById("particleSlider").addEventListener("input", (e) => {
-    process.particleDiameter = Number(e.target.value);
-    document.getElementById("particleValue").textContent = process.particleDiameter + " μm";
-    const scaleFactor = process.particleDiameter / 40;
-    particles.forEach(p => { p.entity.setAttribute("radius", p.baseSize * scaleFactor); });
-});
+if (document.getElementById("densitySlider")) {
+    document.getElementById("densitySlider").addEventListener("input", (e) => {
+        process.densityDifference = Number(e.target.value);
+        document.getElementById("densityValue").textContent = process.densityDifference + " kg/m³";
+    });
+}
 
-document.getElementById("viscositySlider").addEventListener("input", (e) => {
-    process.viscosity = Number(e.target.value);
-    document.getElementById("viscosityValue").textContent = process.viscosity.toFixed(1) + " cP";
-});
+if (document.getElementById("particleSlider")) {
+    document.getElementById("particleSlider").addEventListener("input", (e) => {
+        process.particleDiameter = Number(e.target.value);
+        document.getElementById("particleValue").textContent = process.particleDiameter + " μm";
+        const scaleFactor = process.particleDiameter / 40;
+        particles.forEach(p => { p.entity.setAttribute("radius", p.baseSize * scaleFactor); });
+    });
+}
+
+if (document.getElementById("viscositySlider")) {
+    document.getElementById("viscositySlider").addEventListener("input", (e) => {
+        process.viscosity = Number(e.target.value);
+        document.getElementById("viscosityValue").textContent = process.viscosity.toFixed(1) + " cP";
+    });
+}
 
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
@@ -315,7 +335,7 @@ function startDrag(e) {
 }
 function stopDrag() { isDragging = false; }
 function drag(e) {
-    if (!isDragging) return; 
+    if (!isDragging || !centrifugeContainer) return; 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
