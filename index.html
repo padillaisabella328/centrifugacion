@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fenómeno de Centrifugación AR</title>
+    <title>Centrífuga de Canasta AR</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
@@ -15,8 +15,8 @@
 <div id="loader">
     <div id="loaderCard">
         <i class="fa-solid fa-dharmachakra" id="loaderIcon"></i>
-        <h1>Mecánica de Fluidos</h1>
-        <p>Inicializando volumen de control...</p>
+        <h1>Centrífuga de Canasta</h1>
+        <p>Generando tambor rotatorio...</p>
         <div id="loaderBar"><div id="loaderProgress"></div></div>
     </div>
 </div>
@@ -50,7 +50,7 @@
             <span id="rpmValue">450 RPM</span>
         </div>
         <div class="controlGroup">
-            <label>Radio de giro</label>
+            <label>Radio del tambor</label>
             <input type="range" id="radiusSlider" min="0.05" max="0.50" value="0.30" step="0.01">
             <span id="radiusValue">0.30 m</span>
         </div>
@@ -60,17 +60,17 @@
             <span id="densityValue">800 kg/m³</span>
         </div>
         <div class="controlGroup">
-            <label>Diámetro de partícula (D_p)</label>
+            <label>Diámetro de partícula</label>
             <input type="range" id="particleSlider" min="5" max="120" value="40" step="1">
             <span id="particleValue">40 μm</span>
         </div>
         <div class="controlGroup">
-            <label>Viscosidad del fluido (μ)</label>
+            <label>Viscosidad del fluido</label>
             <input type="range" id="viscositySlider" min="0.5" max="10" value="1" step="0.1">
             <span id="viscosityValue">1.0 cP</span>
         </div>
 
-        <h2>Dinámica del Sistema</h2>
+        <h2>Parámetros del proceso</h2>
         <div id="cardsContainer">
             <div class="card"><span>ω</span><h3 id="omegaValue">0</h3><small>rad/s</small></div>
             <div class="card"><span>Factor G</span><h3 id="gValue">0</h3><small>x g</small></div>
@@ -93,29 +93,24 @@
 
     <a-marker id="hiroMarker" preset="hiro" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
         
-        <a-entity id="centrifuge" position="0 0.1 0" rotation="45 0 0" scale="1 1 1">
+        <a-entity id="centrifuge" position="0 0.1 0" rotation="30 0 0" scale="1 1 1">
             
-            <a-cylinder radius="0.005" height="0.4" color="#a0aec0" metalness="0.8" roughness="0.2"></a-cylinder>
-            <a-text value="Eje de rotacion" position="0 0.22 0" align="center" color="#ffffff" scale="0.2 0.2 0.2" side="double"></a-text>
+            <a-cylinder position="0 -0.22 0" radius="0.35" height="0.04" color="#1e293b" metalness="0.5"></a-cylinder>
 
             <a-entity id="rotor">
                 
-                <a-cylinder position="0.1 0 0" rotation="0 0 90" radius="0.003" height="0.2" color="#a0aec0"></a-cylinder>
+                <a-cylinder radius="0.30" height="0.4" color="#e2f1f8" opacity="0.25" transparent="true" metalness="0.3" roughness="0.1" side="double"></a-cylinder>
+                
+                <a-cylinder position="0 -0.2 0" radius="0.30" height="0.015" color="#94a3b8" metalness="0.8"></a-cylinder>
+                
+                <a-torus position="0 0.2 0" rotation="90 0 0" radius="0.30" radius-tubular="0.01" color="#94a3b8" metalness="0.8"></a-torus>
+                
+                <a-cylinder radius="0.015" height="0.45" color="#64748b" metalness="0.9"></a-cylinder>
 
-                <a-entity id="forceVector" position="0.12 0 0" rotation="0 0 -90">
-                    <a-cylinder position="0 -0.12 0" radius="0.002" height="0.15" color="#32d26b"></a-cylinder>
-                    <a-cone position="0 -0.20 0" rotation="180 0 0" radius-bottom="0.015" radius-top="0" height="0.04" color="#32d26b"></a-cone>
-                    <a-text value="Fc" position="0 -0.25 0" align="center" color="#32d26b" scale="0.25 0.25 0.25" rotation="0 0 90" side="double"></a-text>
-                </a-entity>
+                <a-cylinder id="fluid" radius="0.29" height="0.39" color="#4da6ff" opacity="0.35" transparent="true"></a-cylinder>
 
-                <a-entity id="tube1" position="0.25 0 0" rotation="0 0 -90">
-                    <a-cylinder radius="0.045" height="0.24" color="#ffffff" opacity="0.15" transparent="true" metalness="0.8" roughness="0"></a-cylinder>
-                    <a-cylinder id="fluid" position="0 0 0" radius="0.04" height="0.23" color="#4da6ff" opacity="0.3" transparent="true"></a-cylinder>
-                    <a-cylinder id="pellet" position="0 -0.115 0" radius="0.04" height="0" color="#8b4513" opacity="0.95"></a-cylinder>
-                    
-                    <a-entity id="particles1"></a-entity>
-                </a-entity>
-
+                <a-entity id="particles1"></a-entity>
+                
             </a-entity>
 
         </a-entity>
@@ -128,14 +123,14 @@
 <div id="infoModal">
     <div id="infoCard">
         <div id="infoHeader">
-            <h2>Dinámica de Centrifugación</h2>
+            <h2>Centrífuga de Canasta</h2>
             <button id="closeInfo">✕</button>
         </div>
         <div id="infoBody">
             <h3>Objetivo</h3>
-            <p>Visualizar el fenómeno de migración radial y separación de fases inducido por un campo centrífugo.</p>
-            <h3>Principios evaluados</h3>
-            <p>• Ley de Stokes modificada<br>• Gradientes de densidad<br>• Velocidad de sedimentación<br>• Compactación del pellet sólido</p>
+            <p>Simular el principio físico de una centrífuga de tambor (similar a una lavadora), donde la fuerza centrífuga obliga a las partículas a migrar radialmente hacia las paredes del equipo.</p>
+            <h3>Variables evaluadas</h3>
+            <p>Ajusta el radio del tambor, la velocidad y la viscosidad para observar cómo cambia el tiempo en que las partículas tardan en pegarse a la pared exterior.</p>
         </div>
     </div>
 </div>
