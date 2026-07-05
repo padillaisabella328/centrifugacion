@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>
+
+Simulador de Centrifugación AR
+
+</title>
+
+<!-- ===================================================== -->
+<!--                    AFRAME                             -->
+<!-- ===================================================== -->
+
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+<link
+rel="stylesheet"
+href="style.css">
+
+</head>
+
+<body>
+
+<!-- ===================================================== -->
+<!--                     LOADER                            -->
+<!-- ===================================================== -->
+
+<div id="loader">
+
+    <div id="loaderCard">
+
+        <i
+        class="fa-solid fa-dharmachakra"
+        id="loaderIcon">
+
+        </i>
+
+        <h1>
+
+        Simulador de Centrifugación
+
+        </h1>
+
+        <p>
+
+        Inicializando motor gráfico...
+
+        </p>
+
+        <div id="loaderBar">
+
+            <div id="loaderProgress"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!--               BARRA SUPERIOR                          -->
+<!-- ===================================================== -->
+
+<header id="topBar">
+
+    <div id="statusBox">
+
+        <div id="statusLed"></div>
+
+        <span id="statusText">
+
+            Buscando marcador Hiro
+
+        </span>
+
+    </div>
+
+    <div id="timerBox">
+
+        <i class="fa-regular fa-clock"></i>
+
+        <span id="timer">
+
+            00:00:00
+
+        </span>
+
+    </div>
+
+</header>
+
+<!-- ===================================================== -->
+<!--            BOTONES FLOTANTES                          -->
+<!-- ===================================================== -->
+
+<div id="floatingButtons">
+
+<button id="btnStart">
+
+<i class="fa-solid fa-play"></i>
+
+</button>
+
+<button id="btnPause">
+
+<i class="fa-solid fa-pause"></i>
+
+</button>
+
+<button id="btnReset">
+
+<i class="fa-solid fa-rotate-right"></i>
+
+</button>
+
+<button id="btnInfo">
+
+<i class="fa-solid fa-circle-info"></i>
+
+</button>
+
+<button id="btnMenu">
+
+<i class="fa-solid fa-sliders"></i>
+
+</button>
+
+</div>
+<!-- ===================================================== -->
+<!--             DASHBOARD DESLIZABLE                      -->
+<!-- ===================================================== -->
+
+<div id="dashboard">
+
+    <div id="dashboardHandle">
+
+        <div id="handleBar"></div>
+
+        <span>
+
+            Panel de Control
+
+        </span>
+
+    </div>
+
+    <div id="dashboardContent">
+
+        <!-- ============================================ -->
+        <!--               VELOCIDAD                      -->
+        <!-- ============================================ -->
+
+        <div class="controlGroup">
+
+            <label>
+
+                Velocidad del rotor
+
+            </label>
+
+            <input
+            type="range"
+            id="rpmSlider"
+            min="100"
+            max="1800"
+            value="450"
+            step="10">
+
+            <span
+            id="rpmValue">
+
+            450 RPM
+
+            </span>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!--                  RADIO                       -->
+        <!-- ============================================ -->
+
+        <div class="controlGroup">
+
+            <label>
+
+                Radio de centrifugación
+
+            </label>
+
+            <input
+            type="range"
+            id="radiusSlider"
+            min="0.05"
+            max="0.50"
+            value="0.30"
+            step="0.01">
+
+            <span
+            id="radiusValue">
+
+            0.30 m
+
+            </span>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!--            DIFERENCIA DE DENSIDAD            -->
+        <!-- ============================================ -->
+
+        <div class="controlGroup">
+
+            <label>
+
+                Δ Densidad
+
+            </label>
+
+            <input
+            type="range"
+            id="densitySlider"
+            min="100"
+            max="2000"
+            value="800"
+            step="10">
+
+            <span
+            id="densityValue">
+
+            800 kg/m³
+
+            </span>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!--          DIÁMETRO DE PARTÍCULA               -->
+        <!-- ============================================ -->
+
+        <div class="controlGroup">
+
+            <label>
+
+                Tamaño de partícula
+
+            </label>
+
+            <input
+            type="range"
+            id="particleSlider"
+            min="5"
+            max="120"
+            value="40"
+            step="1">
+
+            <span
+            id="particleValue">
+
+            40 μm
+
+            </span>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!--              VISCOSIDAD                      -->
+        <!-- ============================================ -->
+
+        <div class="controlGroup">
+
+            <label>
+
+                Viscosidad
+
+            </label>
+
+            <input
+            type="range"
+            id="viscositySlider"
+            min="0.5"
+            max="10"
+            value="1"
+            step="0.1">
+
+            <span
+            id="viscosityValue">
+
+            1.0 cP
+
+            </span>
+
+        </div>
+
+        <!-- ============================================ -->
+        <!--           RESULTADOS                         -->
+        <!-- ============================================ -->
+
+        <h2>
+
+            Parámetros del proceso
+
+        </h2>
+
+        <div id="cardsContainer">
+
+            <div class="card">
+
+                <span>
+
+                    ω
+
+                </span>
+
+                <h3
+                id="omegaValue">
+
+                0
+
+                </h3>
+
+                <small>
+
+                    rad/s
+
+                </small>
+
+            </div>
+
+            <div class="card">
+
+                <span>
+
+                    Factor G
+
+                </span>
+
+                <h3
+                id="gValue">
+
+                0
+
+                </h3>
+
+                <small>
+
+                    x g
+
+                </small>
+
+            </div>
+
+            <div class="card">
+
+                <span>
+
+                    Fuerza
+
+                </span>
+
+                <h3
+                id="forceValue">
+
+                0
+
+                </h3>
+
+                <small>
+
+                    nN
+
+                </small>
+
+            </div>
+
+            <div class="card">
+
+                <span>
+
+                    Sedimentación
+
+                </span>
+
+                <h3
+                id="velocityValue">
+
+                0
+
+                </h3>
+
+                <small>
+
+                    mm/s
+
+                </small>
+
+            </div>
+
+            <div class="card">
+
+                <span>
+
+                    Aceleración
+
+                </span>
+
+                <h3
+                id="accelerationValue">
+
+                0
+
+                </h3>
+
+                <small>
+
+                    m/s²
+
+                </small>
+
+            </div>
+
+            <div class="card">
+
+                <span>
+
+                    Eficiencia
+
+                </span>
+
+                <h3
+                id="powerValue">
+
+                0 %
+
+                </h3>
+
+                <small>
+
+                    rendimiento
+
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<!-- ===================================================== -->
+<!--                 ESCENA DE REALIDAD AUMENTADA          -->
+<!-- ===================================================== -->
+
+<a-scene
+
+<a-scene
+embedded
+vr-mode-ui="enabled:false"
+device-orientation-permission-ui="enabled:false"
+renderer="antialias:true; alpha:true;"
+arjs="sourceType:webcam; debugUIEnabled:false;">
+
+trackingMethod:best;
+
+sourceType:webcam;
+
+debugUIEnabled:false;
+
+">
+
+<!-- ===================================================== -->
+<!--                    CÁMARA                             -->
+<!-- ===================================================== -->
+
+<a-entity
+camera
+look-controls="enabled:false"
+position="0 0 0">
+</a-entity>
+
+<!-- ===================================================== -->
+<!--                MARCADOR HIRO                          -->
+<!-- ===================================================== -->
+
+<a-marker
+
+id="hiroMarker"
+
+preset="hiro"
+
+smooth="true"
+
+smoothCount="10"
+
+smoothTolerance="0.01"
+
+smoothThreshold="5"
+
+>
+
+<!-- ===================================================== -->
+<!--            CONTENEDOR PRINCIPAL                       -->
+<!-- ===================================================== -->
+
+<a-entity
+
+id="centrifuge"
+
+position="0 0 0"
+
+rotation="0 0 0"
+
+scale="1 1 1">
+
+<!-- ===================================================== -->
+<!--               BASE DE LA CENTRÍFUGA                   -->
+<!-- ===================================================== -->
+
+<a-cylinder
+
+radius="0.36"
+
+height="0.05"
+
+color="#2d3138"
+
+metalness="0.95"
+
+roughness="0.18">
+
+</a-cylinder>
+
+<!-- ===================================================== -->
+<!--               PLATAFORMA SUPERIOR                     -->
+<!-- ===================================================== -->
+
+<a-cylinder
+
+position="0 0.03 0"
+
+radius="0.33"
+
+height="0.015"
+
+color="#5f646c"
+
+metalness="1"
+
+roughness="0.08">
+
+</a-cylinder>
+
+<!-- ===================================================== -->
+<!--                ROTOR PRINCIPAL                        -->
+<!-- ===================================================== -->
+
+<a-entity
+
+id="rotor"
+
+position="0 0.06 0">
+
+<a-cylinder
+
+radius="0.045"
+
+height="0.09"
+
+color="#9098a4"
+
+metalness="1"
+
+roughness="0.05">
+
+</a-cylinder>
+
+<a-cylinder
+
+radius="0.23"
+
+height="0.015"
+
+rotation="0 0 0"
+
+color="#777"
+
+metalness="1">
+
+</a-cylinder>
+
+<a-cylinder
+
+radius="0.23"
+
+height="0.015"
+
+rotation="0 90 0"
+
+color="#777"
+
+metalness="1">
+
+</a-cylinder>
+<!-- ===================================================== -->
+<!--                  TUBO 1                               -->
+<!-- ===================================================== -->
+
+<a-entity id="tube1" position="0.19 0.06 0" rotation="0 0 -28">
+
+    <!-- Tubo transparente -->
+
+    <a-cylinder
+
+        radius="0.028"
+
+        height="0.19"
+
+        color="#dff7ff"
+
+        opacity="0.28"
+
+        transparent="true"
+
+        metalness="0.1"
+
+        roughness="0">
+
+    </a-cylinder>
+
+    <!-- Líquido -->
+
+    <a-cylinder
+
+        id="fluid1"
+
+        position="0 -0.02 0"
+
+        radius="0.022"
+
+        height="0.12"
+
+        color="#4da6ff"
+
+        opacity="0.72"
+
+        transparent="true">
+
+    </a-cylinder>
+
+    <!-- Sistema de partículas -->
+
+    <a-entity id="particles1"></a-entity>
+
+</a-entity>
+
+<!-- ===================================================== -->
+<!--                  TUBO 2                               -->
+<!-- ===================================================== -->
+
+<a-entity id="tube2" position="-0.19 0.06 0" rotation="0 0 28">
+
+    <a-cylinder
+
+        radius="0.028"
+
+        height="0.19"
+
+        color="#dff7ff"
+
+        opacity="0.28"
+
+        transparent="true"
+
+        metalness="0.1"
+
+        roughness="0">
+
+    </a-cylinder>
+
+    <a-cylinder
+
+        id="fluid2"
+
+        position="0 -0.02 0"
+
+        radius="0.022"
+
+        height="0.12"
+
+        color="#4da6ff"
+
+        opacity="0.72"
+
+        transparent="true">
+
+    </a-cylinder>
+
+    <a-entity id="particles2"></a-entity>
+
+</a-entity>
+
+<!-- ===================================================== -->
+<!--                  TUBO 3                               -->
+<!-- ===================================================== -->
+
+<a-entity id="tube3" position="0 0.06 0.19" rotation="28 0 0">
+
+    <a-cylinder
+
+        radius="0.028"
+
+        height="0.19"
+
+        color="#dff7ff"
+
+        opacity="0.28"
+
+        transparent="true"
+
+        metalness="0.1"
+
+        roughness="0">
+
+    </a-cylinder>
+
+    <a-cylinder
+
+        id="fluid3"
+
+        position="0 -0.02 0"
+
+        radius="0.022"
+
+        height="0.12"
+
+        color="#4da6ff"
+
+        opacity="0.72"
+
+        transparent="true">
+
+    </a-cylinder>
+
+    <a-entity id="particles3"></a-entity>
+
+</a-entity>
+
+<!-- ===================================================== -->
+<!--                  TUBO 4                               -->
+<!-- ===================================================== -->
+
+<a-entity id="tube4" position="0 0.06 -0.19" rotation="-28 0 0">
+
+    <a-cylinder
+
+        radius="0.028"
+
+        height="0.19"
+
+        color="#dff7ff"
+
+        opacity="0.28"
+
+        transparent="true"
+
+        metalness="0.1"
+
+        roughness="0">
+
+    </a-cylinder>
+
+    <a-cylinder
+
+        id="fluid4"
+
+        position="0 -0.02 0"
+
+        radius="0.022"
+
+        height="0.12"
+
+        color="#4da6ff"
+
+        opacity="0.72"
+
+        transparent="true">
+
+    </a-cylinder>
+
+    <a-entity id="particles4"></a-entity>
+
+</a-entity>
+<!-- ===================================================== -->
+<!--                ARO LUMINOSO                           -->
+<!-- ===================================================== -->
+
+<a-torus
+
+id="scanRing"
+
+position="0 0.08 0"
+
+rotation="90 0 0"
+
+radius="0.27"
+
+radius-tubular="0.003"
+
+color="#00d8ff"
+
+emissive="#00d8ff"
+
+emissiveIntensity="2"
+
+opacity="0.65"
+
+transparent="true">
+
+</a-torus>
+
+<!-- ===================================================== -->
+<!--             LUCES INDICADORAS                         -->
+<!-- ===================================================== -->
+
+<a-sphere
+
+id="ledGreen"
+
+position="0.12 0.04 0.28"
+
+radius="0.012"
+
+color="#32d26b"
+
+emissive="#003300">
+
+</a-sphere>
+
+<a-sphere
+
+id="ledYellow"
+
+position="0 0.04 0.30"
+
+radius="0.012"
+
+color="#ffcc00"
+
+emissive="#332600">
+
+</a-sphere>
+
+<a-sphere
+
+id="ledRed"
+
+position="-0.12 0.04 0.28"
+
+radius="0.012"
+
+color="#ff4545"
+
+emissive="#330000">
+
+</a-sphere>
+
+<!-- ===================================================== -->
+<!--                ILUMINACIÓN                            -->
+<!-- ===================================================== -->
+
+<a-light
+
+type="ambient"
+
+color="#ffffff"
+
+intensity="0.95">
+
+</a-light>
+
+<a-light
+
+type="directional"
+
+position="1 2 1"
+
+intensity="1.2"
+
+color="#ffffff">
+
+</a-light>
+
+<a-light
+
+type="point"
+
+position="0 0.35 0"
+
+color="#00d8ff"
+
+intensity="0.9"
+
+distance="2">
+
+</a-light>
+
+<a-light
+
+type="point"
+
+position="0 0.15 0"
+
+color="#ffffff"
+
+intensity="0.5"
+
+distance="1.2">
+
+</a-light>
+
+<!-- ===================================================== -->
+<!--            FIN DEL MODELO 3D                          -->
+<!-- ===================================================== -->
+
+</a-entity>
+
+</a-marker>
+
+</a-scene>
+
+<!-- ===================================================== -->
+<!--                MODAL DE INFORMACIÓN                   -->
+<!-- ===================================================== -->
+
+<div id="infoModal">
+
+    <div id="infoCard">
+
+        <div id="infoHeader">
+
+            <h2>
+
+                Simulador de Centrifugación
+
+            </h2>
+
+            <button id="closeInfo">
+
+                ✕
+
+            </button>
+
+        </div>
+
+        <div id="infoBody">
+
+            <h3>
+
+                Objetivo
+
+            </h3>
+
+            <p>
+
+                Este simulador permite visualizar el proceso de separación
+                sólido-líquido mediante centrifugación utilizando
+                realidad aumentada.
+
+            </p>
+
+            <h3>
+
+                Variables modificables
+
+            </h3>
+
+            <p>
+
+                • Velocidad del rotor (RPM)<br>
+                • Radio efectivo<br>
+                • Diferencia de densidades<br>
+                • Tamaño de partícula<br>
+                • Viscosidad del fluido
+
+            </p>
+
+            <h3>
+
+                Parámetros calculados
+
+            </h3>
+
+            <p>
+
+                • Velocidad angular<br>
+                • Factor G<br>
+                • Fuerza centrífuga<br>
+                • Velocidad de sedimentación
+
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!--                JAVASCRIPT                             -->
+<!-- ===================================================== -->
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
