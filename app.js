@@ -1,5 +1,6 @@
 /* ===========================================================
-   GEMELO DIGITAL DE CENTRIFUGACIÓN - DISEÑO INDUSTRIAL
+   GEMELO DIGITAL DE CENTRIFUGACIÓN - DISEÑO INDUSTRIAL V3
+   (INCLUYE ZOOM TÁCTIL Y COLORES DIFERENCIALES EN TORTA)
 =========================================================== */
 
 let running = false;
@@ -26,7 +27,7 @@ let process = {
     cakeThickness: 0 
 };
 
-// Variable dinámica para la cantidad de partículas (ahora controlable)
+// Población de partículas
 let PARTICLES_COUNT = 350; 
 let DRUM_MAX_RADIUS = 0.29; 
 const MAX_CAKE_THICKNESS = 0.04; 
@@ -77,7 +78,7 @@ function updateDashboard() {
     if (cakeEl) cakeEl.textContent = (process.cakeThickness * 1000).toFixed(1);
 }
 
-// Loader
+// Loader Animación
 let load = 0;
 const loaderAnimation = setInterval(() => {
     load += Math.random() * 12;
@@ -89,7 +90,7 @@ const loaderAnimation = setInterval(() => {
     if (loaderProgress) loaderProgress.style.width = load + "%";
 }, 60);
 
-// UI Events
+// Eventos de Interfaz
 if (document.getElementById("dashboardHandle")) document.getElementById("dashboardHandle").addEventListener("click", () => dashboard.classList.toggle("open"));
 if (btnMenu) btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
 
@@ -131,7 +132,7 @@ function stopTimer() { clearInterval(timerInterval); }
 function resetTimer() { elapsedTime = 0; if (timer) timer.textContent = "00:00:00"; }
 
 /* ===========================================================
-   CÁLCULOS TERMODINÁMICOS Y DE TRANSPORTE
+   CÁLCULOS TERMODINÁMICOS
 =========================================================== */
 function calculatePhysics() {
     process.omega = 2 * Math.PI * (targetRPM / 60);
@@ -164,17 +165,14 @@ function updateRotor(delta) {
 }
 
 /* ===========================================================
-   GENERACIÓN Y DINÁMICA DE PARTÍCULAS
+   SISTEMA DE PARTÍCULAS
 =========================================================== */
 function createParticles() {
     const container = document.getElementById("particles1");
     if (!container) return;
     
-    // Limpiar el contenedor antes de crear nuevas (para el control de cantidad)
     container.innerHTML = "";
     particles = [];
-    
-    // Factor de escala actual del diámetro de partícula
     const currentScale = process.particleDiameter / 40;
 
     for (let i = 0; i < PARTICLES_COUNT; i++) {
@@ -186,12 +184,12 @@ function createParticles() {
         const y = (Math.random() * 0.38) - 0.19; 
         
         const baseSize = isTypeA ? 0.005 : 0.003;
-        const color = isTypeA ? "#ff5252" : "#7c4dff"; 
+        const color = isTypeA ? "#ff5252" : "#7c4dff"; // Rojo claro o Morado claro
+        const cakeColor = isTypeA ? "#991b1b" : "#4c1d95"; // Rojo oscuro o Morado oscuro (para la torta)
         
-        // Aplicamos el tamaño ajustado de inmediato
         p.setAttribute("radius", baseSize * currentScale);
         p.setAttribute("color", color);
-        p.setAttribute("metalness", "0.2"); // Darle un ligero brillo
+        p.setAttribute("metalness", "0.2"); 
         
         p.object3D.position.set(Math.cos(angle)*r, y, Math.sin(angle)*r);
         container.appendChild(p);
@@ -201,6 +199,7 @@ function createParticles() {
             type: isTypeA ? 'A' : 'B',
             baseSize: baseSize,
             originalColor: color,
+            cakeColor: cakeColor,
             angle: angle,
             r: r,
             y: y,
@@ -210,7 +209,7 @@ function createParticles() {
 }
 
 function updateEngineeringParticles(delta) {
-    if (PARTICLES_COUNT === 0) return; // Evitar división por cero
+    if (PARTICLES_COUNT === 0) return; 
     
     let sedimentedCount = 0;
     const n_exponent = process.reynoldsParticle < 0.2 ? 4.65 : 2.5;
@@ -233,7 +232,8 @@ function updateEngineeringParticles(delta) {
             if (p.r >= currentRadiusLimit) {
                 p.r = currentRadiusLimit;
                 p.state = "cake"; 
-                p.entity.setAttribute("color", "#334155"); // Gris oscuro industrial para la torta
+                // SOLUCIÓN COLOR: Ahora cambian a un tono oscuro de su propio color
+                p.entity.setAttribute("color", p.cakeColor); 
             }
         }
         
@@ -262,7 +262,7 @@ function resetParticles() {
 }
 
 /* ===========================================================
-   EVENTOS SLIDERS Y ROTACIÓN TÁCTIL
+   EVENTOS DE LOS CONTROLES DESLIZANTES
 =========================================================== */
 if (btnStart) btnStart.addEventListener("click", () => { running = true; startTimer(); });
 if (btnPause) btnPause.addEventListener("click", () => { running = false; stopTimer(); });
@@ -305,13 +305,12 @@ if (document.getElementById("radiusSlider")) {
     });
 }
 
-// CONTROL DINÁMICO DE POBLACIÓN DE PARTÍCULAS
 if (document.getElementById("particleCountSlider")) {
     document.getElementById("particleCountSlider").addEventListener("input", (e) => {
         PARTICLES_COUNT = Number(e.target.value);
         document.getElementById("particleCountValue").textContent = PARTICLES_COUNT + " unidades";
-        process.cakeThickness = 0; // Reiniciamos la torta al cambiar la población
-        createParticles(); // Recreamos el universo de partículas
+        process.cakeThickness = 0; 
+        createParticles(); 
     });
 }
 
@@ -338,25 +337,60 @@ if (document.getElementById("viscositySlider")) {
     });
 }
 
+/* ===========================================================
+   SISTEMA DE CONTROL: ROTACIÓN LIBRE Y ZOOM (NUEVO)
+=========================================================== */
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
+let currentZoom = 1; 
+let initialPinchDistance = null;
 const centrifugeContainer = document.getElementById("centrifuge");
 
 function startDrag(e) {
     if (e.target.closest('#dashboard') || e.target.closest('#floatingButtons') || e.target.closest('#infoModal')) return;
+    
+    // Evitar iniciar rotación si el usuario está haciendo pinza (2 dedos)
+    if (e.touches && e.touches.length >= 2) return; 
+
     isDragging = true;
     previousMousePosition = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
 }
-function stopDrag() { isDragging = false; }
+
+function stopDrag(e) { 
+    isDragging = false; 
+    initialPinchDistance = null; // Reiniciar medida de zoom al soltar
+}
+
 function drag(e) {
-    if (!isDragging || !centrifugeContainer) return; 
+    if (!centrifugeContainer) return;
+
+    // GESTIÓN DEL ZOOM EN CELULARES (PELLIZCO CON 2 DEDOS)
+    if (e.touches && e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        // Calcular la distancia entre los dos dedos
+        const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+
+        if (initialPinchDistance == null) {
+            initialPinchDistance = dist;
+        } else {
+            const delta = dist - initialPinchDistance;
+            currentZoom += delta * 0.005; 
+            currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); // Limitar zoom entre 0.4x y 3.0x
+            centrifugeContainer.setAttribute("scale", `${currentZoom} ${currentZoom} ${currentZoom}`);
+            initialPinchDistance = dist; 
+        }
+        return; // Salir para no mezclar rotación con zoom
+    }
+
+    // GESTIÓN DE LA ROTACIÓN TÁCTIL/MOUSE (1 DEDO O CLIC)
+    if (!isDragging) return; 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
     const deltaMove = { x: clientX - previousMousePosition.x, y: clientY - previousMousePosition.y };
     const currentRotation = centrifugeContainer.getAttribute("rotation");
     
-    // Rotación libre táctil limitando la velocidad con 0.5
     centrifugeContainer.setAttribute("rotation", {
         x: currentRotation.x + deltaMove.y * 0.5,
         y: currentRotation.y + deltaMove.x * 0.5,
@@ -365,6 +399,16 @@ function drag(e) {
     previousMousePosition = { x: clientX, y: clientY };
 }
 
+// GESTIÓN DEL ZOOM EN COMPUTADOR (RUEDA DEL RATÓN)
+document.addEventListener("wheel", (e) => {
+    if (e.target.closest('#dashboard') || e.target.closest('#floatingButtons') || e.target.closest('#infoModal')) return;
+    
+    currentZoom += e.deltaY * -0.001;
+    currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); // Límite de zoom
+    if (centrifugeContainer) centrifugeContainer.setAttribute("scale", `${currentZoom} ${currentZoom} ${currentZoom}`);
+});
+
+// Asignación de Eventos
 document.addEventListener("mousedown", startDrag);
 document.addEventListener("mouseup", stopDrag);
 document.addEventListener("mousemove", drag);
@@ -372,6 +416,9 @@ document.addEventListener("touchstart", startDrag, { passive: false });
 document.addEventListener("touchend", stopDrag);
 document.addEventListener("touchmove", drag, { passive: false });
 
+/* ===========================================================
+   MOTOR DE ANIMACIÓN Y FÍSICA
+=========================================================== */
 let previousTime = performance.now();
 function animate(now) {
     const delta = (now - previousTime) / 1000;
