@@ -1,5 +1,5 @@
 /* ===========================================================
-      SIMULADOR DE CENTRÍFUGA (DOS TIPOS DE PARTÍCULAS)
+   GEMELO DIGITAL DE CENTRIFUGACIÓN - MODELO DE INGENIERÍA
 =========================================================== */
 
 let running = false;
@@ -11,21 +11,24 @@ let elapsedTime = 0;
 let timerInterval = null;
 const gravity = 9.81;
 
-// Parámetros físicos
+// Parámetros de Operación
 let process = {
     radius : 0.30,
     densityDifference : 800,
     particleDiameter : 40,
-    viscosity : 1.0,
+    viscosity : 1.0, // en cP
     omega : 0,
     factorG : 0,
-    acceleration : 0,
-    centrifugalForce : 0,
-    sedimentationVelocity : 0,
-    efficiency : 0
+    nominalAcceleration : 0,
+    nominalStokesVelocity : 0,
+    reynoldsParticle : 0,
+    flowRegime : "Laminar",
+    cakeThickness: 0 // Espesor de la torta sólida (m)
 };
 
-// DOM Elements
+const rho_fluid = 1000; // Densidad base del agua (kg/m³)
+
+// Elementos del DOM
 const rotor = document.getElementById("rotor");
 const marker = document.getElementById("hiroMarker");
 const loader = document.getElementById("loader");
@@ -46,12 +49,23 @@ const timer = document.getElementById("timer");
 function updateDashboard() {
     document.getElementById("omegaValue").textContent = process.omega.toFixed(1);
     document.getElementById("gValue").textContent = process.factorG.toFixed(0);
-    document.getElementById("forceValue").textContent = process.centrifugalForce.toFixed(2);
-    document.getElementById("velocityValue").textContent = (process.sedimentationVelocity * 1000).toFixed(2);
-    document.getElementById("accelerationValue").textContent = process.acceleration.toFixed(0);
-    document.getElementById("powerValue").textContent = process.efficiency.toFixed(0) + " %";
+    document.getElementById("velocityValue").textContent = (process.nominalStokesVelocity * 1000).toFixed(2);
+    
+    // Formateo del Reynolds para evitar notación científica extrema
+    let reFormat = process.reynoldsParticle < 0.01 ? process.reynoldsParticle.toExponential(2) : process.reynoldsParticle.toFixed(3);
+    document.getElementById("reynoldsValue").textContent = reFormat;
+    
+    // Indicador de Régimen
+    const regimeEl = document.getElementById("regimeValue");
+    regimeEl.textContent = process.flowRegime;
+    if(process.flowRegime === "Laminar") regimeEl.style.color = "#32d26b"; // Verde
+    else if(process.flowRegime === "Transición") regimeEl.style.color = "#ffc107"; // Amarillo
+    else regimeEl.style.color = "#ff4545"; // Rojo
+
+    document.getElementById("cakeValue").textContent = (process.cakeThickness * 1000).toFixed(1);
 }
 
+// Loader
 let load = 0;
 const loaderAnimation = setInterval(() => {
     load += Math.random() * 12;
@@ -63,6 +77,7 @@ const loaderAnimation = setInterval(() => {
     loaderProgress.style.width = load + "%";
 }, 60);
 
+// UI Events
 dashboardHandle.addEventListener("click", () => dashboard.classList.toggle("open"));
 btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
 
@@ -97,14 +112,27 @@ function startTimer() {
 function stopTimer() { clearInterval(timerInterval); }
 function resetTimer() { elapsedTime = 0; timer.textContent = "00:00:00"; }
 
+/* ===========================================================
+   CÁLCULOS TERMODINÁMICOS Y DE TRANSPORTE
+=========================================================== */
 function calculatePhysics() {
     process.omega = 2 * Math.PI * (targetRPM / 60);
-    process.acceleration = process.radius * process.omega * process.omega;
-    process.factorG = process.acceleration / gravity;
-    process.centrifugalForce = process.densityDifference * process.acceleration * 1e-9;
+    process.nominalAcceleration = process.radius * process.omega * process.omega;
+    process.factorG = process.nominalAcceleration / gravity;
     
-    process.sedimentationVelocity = (process.densityDifference * process.acceleration * Math.pow(process.particleDiameter * 1e-6, 2)) / (18 * process.viscosity * 0.001);
-    process.efficiency = Math.min(100, process.factorG / 12);
+    const dp_meters = process.particleDiameter * 1e-6;
+    const mu_pascales = process.viscosity * 0.001; // cP a Pa·s
+
+    // Ley de Stokes en el radio máximo (referencia nominal)
+    process.nominalStokesVelocity = (process.densityDifference * process.nominalAcceleration * Math.pow(dp_meters, 2)) / (18 * mu_pascales);
+    
+    // Cálculo del Número de Reynolds de la Partícula (Re_p = rho * v * dp / mu)
+    process.reynoldsParticle = (rho_fluid * process.nominalStokesVelocity * dp_meters) / mu_pascales;
+
+    // Determinación del Régimen Fluido
+    if (process.reynoldsParticle < 0.2) process.flowRegime = "Laminar";
+    else if (process.reynoldsParticle < 500) process.flowRegime = "Transición";
+    else process.flowRegime = "Turbulento";
 }
 
 const ACCELERATION = 200;
@@ -122,10 +150,11 @@ function updateRotor(delta) {
 }
 
 /* ===========================================================
-      SISTEMA DIFERENCIAL DE PARTÍCULAS
+   SISTEMA DE PARTÍCULAS: RICHARDSON-ZAKI Y COMPACTACIÓN
 =========================================================== */
-const PARTICLES_COUNT = 300; 
-let DRUM_MAX_RADIUS = 0.29; // Ahora es variable para poder cambiarla
+const PARTICLES_COUNT = 350; 
+let DRUM_MAX_RADIUS = 0.29; 
+const MAX_CAKE_THICKNESS = 0.04; // Espesor máximo de la torta (m)
 let particles = [];
 
 function createParticles() {
@@ -134,32 +163,26 @@ function createParticles() {
     
     for (let i = 0; i < PARTICLES_COUNT; i++) {
         const p = document.createElement("a-sphere");
-        
-        // Alternar entre tipo A (Rojas/Grandes) y Tipo B (Moradas/Pequeñas)
         const isTypeA = i % 2 === 0; 
         
         const angle = Math.random() * Math.PI * 2;
         const r = 0.02 + Math.random() * (DRUM_MAX_RADIUS - 0.1); 
         const y = (Math.random() * 0.38) - 0.19; 
         
-        // Tamaños base visuales
-        const baseSize = isTypeA ? 0.006 : 0.0035;
-        // Colores de alto contraste
-        const color = isTypeA ? "#ff3333" : "#7a28cb"; 
+        const baseSize = isTypeA ? 0.005 : 0.003;
+        const color = isTypeA ? "#ff5252" : "#7c4dff"; 
         
         p.setAttribute("radius", baseSize);
         p.setAttribute("color", color);
         
-        const x = Math.cos(angle) * r;
-        const z = Math.sin(angle) * r;
-        
-        p.object3D.position.set(x, y, z);
+        p.object3D.position.set(Math.cos(angle)*r, y, Math.sin(angle)*r);
         container.appendChild(p);
         
         particles.push({
             entity: p,
             type: isTypeA ? 'A' : 'B',
             baseSize: baseSize,
+            originalColor: color,
             angle: angle,
             r: r,
             y: y,
@@ -168,36 +191,72 @@ function createParticles() {
     }
 }
 
-function updateParticles(delta) {
+function updateEngineeringParticles(delta) {
+    let sedimentedCount = 0;
+
+    // Exponente empírico de Richardson-Zaki basado en el régimen
+    const n_exponent = process.reynoldsParticle < 0.2 ? 4.65 : 2.5;
+
     particles.forEach(p => {
+        // Límite de colisión actual: Radio del tambor menos el espesor de la torta compactada
+        const currentRadiusLimit = DRUM_MAX_RADIUS - process.cakeThickness;
+
         if (running && p.state === "free") {
-            // Las rojas (Tipo A) viajan al 100% de la velocidad, las moradas (Tipo B) al 35%
-            const speedMultiplier = p.type === 'A' ? 1.0 : 0.35;
-            p.r += (process.sedimentationVelocity * speedMultiplier) * delta * 20; 
+            // 1. Aceleración Radial Dinámica (a = w²*r)
+            const localAcceleration = process.omega * process.omega * p.r;
+            const positionCorrection = process.nominalAcceleration > 0 ? (localAcceleration / process.nominalAcceleration) : 0;
             
-            if (p.r >= DRUM_MAX_RADIUS) {
-                p.r = DRUM_MAX_RADIUS;
-                p.state = "sedimented"; 
+            // 2. Modelo de Sedimentación Impedida (Aproximación por zonas)
+            // A medida que se acercan a la torta, la concentración local de partículas aumenta (phi)
+            let localPhi = 0.05; // Por defecto fluido claro
+            if (p.r > currentRadiusLimit - 0.02) localPhi = 0.45; // Zona de transición densa cerca de la pared
+
+            const hinderedVelocity = process.nominalStokesVelocity * Math.pow((1 - localPhi), n_exponent);
+            
+            // Diferencial de tamaño de partícula
+            const sizeMultiplier = p.type === 'A' ? 1.0 : 0.35;
+            
+            // Integración de posición
+            p.r += (hinderedVelocity * sizeMultiplier * positionCorrection) * delta * 25; 
+            
+            // 3. Formación de la Torta Sólida
+            if (p.r >= currentRadiusLimit) {
+                p.r = currentRadiusLimit;
+                p.state = "cake"; 
+                // Al compactarse, pierden su color y se vuelven parte de la torta oscura
+                p.entity.setAttribute("color", "#4e342e"); 
             }
         }
         
+        if(p.state === "cake") {
+            sedimentedCount++;
+            // Aseguramos que la torta gire adherida a la pared y respete el crecimiento
+            p.r = currentRadiusLimit; 
+        }
+
         const x = Math.cos(p.angle) * p.r;
         const z = Math.sin(p.angle) * p.r;
         p.entity.object3D.position.set(x, p.y, z);
     });
+
+    // Calcular el crecimiento de la torta (relación geométrica del volumen sedimentado)
+    if (running) {
+        process.cakeThickness = (sedimentedCount / PARTICLES_COUNT) * MAX_CAKE_THICKNESS;
+    }
 }
 
 function resetParticles() {
+    process.cakeThickness = 0;
     particles.forEach(p => {
         p.r = 0.02 + Math.random() * (DRUM_MAX_RADIUS - 0.1);
         p.state = "free";
+        p.entity.setAttribute("color", p.originalColor);
     });
 }
 
 /* ===========================================================
-      EVENTOS DE INTERFAZ Y ESCALADO 3D DILÁMICO
+   EVENTOS SLIDERS Y ROTACIÓN TÁCTIL
 =========================================================== */
-// Botón Play sin candado de cámara para que pruebes tranquilo
 btnStart.addEventListener("click", () => { running = true; startTimer(); });
 btnPause.addEventListener("click", () => { running = false; stopTimer(); });
 btnReset.addEventListener("click", () => {
@@ -214,24 +273,18 @@ document.getElementById("rpmSlider").addEventListener("input", (e) => {
     document.getElementById("rpmValue").textContent = targetRPM + " RPM";
 });
 
-// ESCALADO DEL RADIO
 document.getElementById("radiusSlider").addEventListener("input", (e) => {
     process.radius = Number(e.target.value);
     document.getElementById("radiusValue").textContent = process.radius.toFixed(2) + " m";
     
-    // Cambiamos el tamaño físico de las piezas del tambor en el 3D
     document.getElementById("drumWall").setAttribute("radius", process.radius);
     document.getElementById("drumBase").setAttribute("radius", process.radius);
     document.getElementById("drumRing").setAttribute("radius", process.radius);
     
-    // El fluido es un poquito más pequeño que el cristal
     DRUM_MAX_RADIUS = process.radius - 0.01;
     document.getElementById("fluid").setAttribute("radius", DRUM_MAX_RADIUS);
     
-    // Si al encoger el radio hay partículas por fuera, las metemos a la fuerza
-    particles.forEach(p => {
-        if (p.r > DRUM_MAX_RADIUS) p.r = DRUM_MAX_RADIUS;
-    });
+    particles.forEach(p => { if (p.r > DRUM_MAX_RADIUS) p.r = DRUM_MAX_RADIUS; });
 });
 
 document.getElementById("densitySlider").addEventListener("input", (e) => {
@@ -239,18 +292,11 @@ document.getElementById("densitySlider").addEventListener("input", (e) => {
     document.getElementById("densityValue").textContent = process.densityDifference + " kg/m³";
 });
 
-// ESCALADO DE LAS PARTÍCULAS
 document.getElementById("particleSlider").addEventListener("input", (e) => {
     process.particleDiameter = Number(e.target.value);
     document.getElementById("particleValue").textContent = process.particleDiameter + " μm";
-    
-    // Factor de escala (40 es nuestro valor por defecto)
     const scaleFactor = process.particleDiameter / 40;
-    
-    // Actualizamos el radio 3D de todas las esferas
-    particles.forEach(p => {
-        p.entity.setAttribute("radius", p.baseSize * scaleFactor);
-    });
+    particles.forEach(p => { p.entity.setAttribute("radius", p.baseSize * scaleFactor); });
 });
 
 document.getElementById("viscositySlider").addEventListener("input", (e) => {
@@ -258,9 +304,6 @@ document.getElementById("viscositySlider").addEventListener("input", (e) => {
     document.getElementById("viscosityValue").textContent = process.viscosity.toFixed(1) + " cP";
 });
 
-/* ===========================================================
-      CONTROL TÁCTIL (ROTACIÓN LIBRE)
-=========================================================== */
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 const centrifugeContainer = document.getElementById("centrifuge");
@@ -272,7 +315,7 @@ function startDrag(e) {
 }
 function stopDrag() { isDragging = false; }
 function drag(e) {
-    if (!isDragging) return; // Quitamos el bloqueo del marcador aquí también
+    if (!isDragging) return; 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
@@ -301,7 +344,7 @@ function animate(now) {
     
     calculatePhysics();
     updateRotor(delta);
-    updateParticles(delta);
+    updateEngineeringParticles(delta);
     updateDashboard();
     
     requestAnimationFrame(animate);
