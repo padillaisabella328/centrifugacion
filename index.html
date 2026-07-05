@@ -7,6 +7,7 @@
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -16,7 +17,7 @@
     <div id="loaderCard">
         <i class="fa-solid fa-dharmachakra" id="loaderIcon"></i>
         <h1>Centrífuga de Canasta</h1>
-        <p>Generando tambor rotatorio...</p>
+        <p>Calibrando cámara y entorno AR...</p>
         <div id="loaderBar"><div id="loaderProgress"></div></div>
     </div>
 </div>
@@ -44,6 +45,7 @@
         <div id="handleBar"></div><span>Panel de Control</span>
     </div>
     <div id="dashboardContent">
+        
         <div class="controlGroup">
             <label>Velocidad de rotación</label>
             <input type="range" id="rpmSlider" min="100" max="1800" value="450" step="10">
@@ -51,7 +53,7 @@
         </div>
         <div class="controlGroup">
             <label>Radio del tambor</label>
-            <input type="range" id="radiusSlider" min="0.05" max="0.50" value="0.30" step="0.01">
+            <input type="range" id="radiusSlider" min="0.10" max="0.45" value="0.30" step="0.01">
             <span id="radiusValue">0.30 m</span>
         </div>
         <div class="controlGroup">
@@ -60,8 +62,8 @@
             <span id="densityValue">800 kg/m³</span>
         </div>
         <div class="controlGroup">
-            <label>Diámetro de partícula</label>
-            <input type="range" id="particleSlider" min="5" max="120" value="40" step="1">
+            <label>Diámetro de partícula base</label>
+            <input type="range" id="particleSlider" min="10" max="120" value="40" step="1">
             <span id="particleValue">40 μm</span>
         </div>
         <div class="controlGroup">
@@ -86,33 +88,26 @@
     embedded
     vr-mode-ui="enabled:false"
     device-orientation-permission-ui="enabled:false"
-    renderer="antialias:true; alpha:true;"
-    arjs="sourceType:webcam; trackingMethod:best; debugUIEnabled:false;">
+    renderer="antialias:true; alpha:true; logarithmicDepthBuffer:true;"
+    arjs="sourceType: webcam; trackingMethod: best; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; debugUIEnabled: false;">
     
     <a-entity camera look-controls="enabled:false" position="0 0 0"></a-entity>
 
     <a-marker id="hiroMarker" preset="hiro" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
         
         <a-entity id="centrifuge" position="0 0.1 0" rotation="30 0 0" scale="1 1 1">
-            
             <a-cylinder position="0 -0.22 0" radius="0.35" height="0.04" color="#1e293b" metalness="0.5"></a-cylinder>
 
             <a-entity id="rotor">
-                
-                <a-cylinder radius="0.30" height="0.4" color="#e2f1f8" opacity="0.25" transparent="true" metalness="0.3" roughness="0.1" side="double"></a-cylinder>
-                
-                <a-cylinder position="0 -0.2 0" radius="0.30" height="0.015" color="#94a3b8" metalness="0.8"></a-cylinder>
-                
-                <a-torus position="0 0.2 0" rotation="90 0 0" radius="0.30" radius-tubular="0.01" color="#94a3b8" metalness="0.8"></a-torus>
+                <a-cylinder id="drumWall" radius="0.30" height="0.4" color="#e2f1f8" opacity="0.25" transparent="true" metalness="0.3" roughness="0.1" side="double"></a-cylinder>
+                <a-cylinder id="drumBase" position="0 -0.2 0" radius="0.30" height="0.015" color="#94a3b8" metalness="0.8"></a-cylinder>
+                <a-torus id="drumRing" position="0 0.2 0" rotation="90 0 0" radius="0.30" radius-tubular="0.01" color="#94a3b8" metalness="0.8"></a-torus>
                 
                 <a-cylinder radius="0.015" height="0.45" color="#64748b" metalness="0.9"></a-cylinder>
-
                 <a-cylinder id="fluid" radius="0.29" height="0.39" color="#4da6ff" opacity="0.35" transparent="true"></a-cylinder>
 
                 <a-entity id="particles1"></a-entity>
-                
             </a-entity>
-
         </a-entity>
 
         <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
@@ -128,9 +123,9 @@
         </div>
         <div id="infoBody">
             <h3>Objetivo</h3>
-            <p>Simular el principio físico de una centrífuga de tambor (similar a una lavadora), donde la fuerza centrífuga obliga a las partículas a migrar radialmente hacia las paredes del equipo.</p>
-            <h3>Variables evaluadas</h3>
-            <p>Ajusta el radio del tambor, la velocidad y la viscosidad para observar cómo cambia el tiempo en que las partículas tardan en pegarse a la pared exterior.</p>
+            <p>Simular el principio físico de una centrífuga de tambor.</p>
+            <h3>Separación Diferencial</h3>
+            <p>Observa cómo las partículas pesadas (Rojas) migran rápidamente a la pared, mientras las ligeras (Moradas) tardan más tiempo en separarse del fluido.</p>
         </div>
     </div>
 </div>
