@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Centrífuga de Canasta AR</title>
+    <title>Centrífuga de Canasta AR - Ingeniería</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -16,8 +15,8 @@
 <div id="loader">
     <div id="loaderCard">
         <i class="fa-solid fa-dharmachakra" id="loaderIcon"></i>
-        <h1>Centrífuga de Canasta</h1>
-        <p>Calibrando cámara y entorno AR...</p>
+        <h1>Ingeniería de Procesos</h1>
+        <p>Calculando perfiles fluidodinámicos...</p>
         <div id="loaderBar"><div id="loaderProgress"></div></div>
     </div>
 </div>
@@ -45,41 +44,40 @@
         <div id="handleBar"></div><span>Panel de Control</span>
     </div>
     <div id="dashboardContent">
-        
         <div class="controlGroup">
-            <label>Velocidad de rotación</label>
+            <label>Velocidad del rotor</label>
             <input type="range" id="rpmSlider" min="100" max="1800" value="450" step="10">
             <span id="rpmValue">450 RPM</span>
         </div>
         <div class="controlGroup">
-            <label>Radio del tambor</label>
+            <label>Radio de la canasta</label>
             <input type="range" id="radiusSlider" min="0.10" max="0.45" value="0.30" step="0.01">
             <span id="radiusValue">0.30 m</span>
         </div>
         <div class="controlGroup">
-            <label>Δ Densidad (ρ_p - ρ_f)</label>
+            <label>Δ Densidad sólido-líquido</label>
             <input type="range" id="densitySlider" min="100" max="2000" value="800" step="10">
             <span id="densityValue">800 kg/m³</span>
         </div>
         <div class="controlGroup">
-            <label>Diámetro de partícula base</label>
+            <label>Diámetro de partícula ($D_p$)</label>
             <input type="range" id="particleSlider" min="10" max="120" value="40" step="1">
             <span id="particleValue">40 μm</span>
         </div>
         <div class="controlGroup">
-            <label>Viscosidad del fluido</label>
+            <label>Viscosidad dinámica ($\mu$)</label>
             <input type="range" id="viscositySlider" min="0.5" max="10" value="1" step="0.1">
             <span id="viscosityValue">1.0 cP</span>
         </div>
 
-        <h2>Parámetros del proceso</h2>
+        <h2>Dinámica del Sistema</h2>
         <div id="cardsContainer">
-            <div class="card"><span>ω</span><h3 id="omegaValue">0</h3><small>rad/s</small></div>
+            <div class="card"><span>V. Angular ($\omega$)</span><h3 id="omegaValue">0</h3><small>rad/s</small></div>
             <div class="card"><span>Factor G</span><h3 id="gValue">0</h3><small>x g</small></div>
-            <div class="card"><span>Fuerza Fc</span><h3 id="forceValue">0</h3><small>nN</small></div>
-            <div class="card"><span>V. Migración</span><h3 id="velocityValue">0</h3><small>mm/s</small></div>
-            <div class="card"><span>Aceleración</span><h3 id="accelerationValue">0</h3><small>m/s²</small></div>
-            <div class="card"><span>Rendimiento</span><h3 id="powerValue">0 %</h3><small>separación</small></div>
+            <div class="card"><span>$v_s$ (Stokes)</span><h3 id="velocityValue">0</h3><small>mm/s</small></div>
+            <div class="card"><span>Reynolds ($Re_p$)</span><h3 id="reynoldsValue">0</h3><small>adimensional</small></div>
+            <div class="card"><span>Régimen</span><h3 id="regimeValue">-</h3><small>de flujo</small></div>
+            <div class="card"><span>Torta Sólida</span><h3 id="cakeValue">0</h3><small>mm de espesor</small></div>
         </div>
     </div>
 </div>
@@ -118,14 +116,15 @@
 <div id="infoModal">
     <div id="infoCard">
         <div id="infoHeader">
-            <h2>Centrífuga de Canasta</h2>
+            <h2>Modelo de Ingeniería</h2>
             <button id="closeInfo">✕</button>
         </div>
         <div id="infoBody">
-            <h3>Objetivo</h3>
-            <p>Simular el principio físico de una centrífuga de tambor.</p>
-            <h3>Separación Diferencial</h3>
-            <p>Observa cómo las partículas pesadas (Rojas) migran rápidamente a la pared, mientras las ligeras (Moradas) tardan más tiempo en separarse del fluido.</p>
+            <h3>Fundamentos Teóricos</h3>
+            <p>Este gemelo digital aplica correcciones avanzadas al modelo lineal clásico:</p>
+            <p>• <b>Aceleración Radial:</b> $a = \omega^2 \cdot r$. Las partículas aceleran más a medida que se alejan del centro.<br>
+               • <b>Sedimentación Impedida:</b> Se aplica la ecuación de Richardson-Zaki para modelar la interferencia de partículas en altas concentraciones.<br>
+               • <b>Compactación de Torta:</b> Los sólidos forman una barrera física (torta) en la pared de la canasta, reduciendo el radio útil del tambor.</p>
         </div>
     </div>
 </div>
