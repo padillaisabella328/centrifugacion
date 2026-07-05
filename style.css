@@ -1,0 +1,1027 @@
+/* ========================================================= */
+/*              SIMULADOR DE CENTRIFUGACIÓN AR              */
+/*                    STYLE.CSS V2.0                        */
+/* ========================================================= */
+
+*{
+
+    margin:0;
+
+    padding:0;
+
+    box-sizing:border-box;
+
+}
+
+html,
+body{
+
+    width:100%;
+
+    height:100%;
+
+    overflow:hidden;
+
+    font-family:Arial,Helvetica,sans-serif;
+
+    background:#000;
+
+    touch-action:none;
+
+}
+
+/* ========================================================= */
+/*                     VARIABLES                            */
+/* ========================================================= */
+
+:root{
+
+    --cyan:#00d8ff;
+
+    --green:#32d26b;
+
+    --yellow:#ffc107;
+
+    --red:#ff4545;
+
+    --dark:#111827;
+
+    --panel:rgba(15,20,30,.82);
+
+    --border:rgba(255,255,255,.12);
+
+    --shadow:0 12px 35px rgba(0,0,0,.55);
+
+}
+
+/* ========================================================= */
+/*                  SCENE AFRAME                            */
+/* ========================================================= */
+
+a-scene{
+
+    position:fixed;
+
+    inset:0;
+
+    width:100%;
+
+    height:100%;
+
+    z-index:1;
+
+}
+
+/* ========================================================= */
+/*                     LOADER                               */
+/* ========================================================= */
+
+#loader{
+
+    position:fixed;
+
+    inset:0;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:#05080d;
+
+    z-index:99999;
+
+    transition:opacity .6s;
+
+}
+
+#loaderCard{
+
+    width:320px;
+
+    padding:35px;
+
+    border-radius:22px;
+
+    background:#111827;
+
+    box-shadow:var(--shadow);
+
+    text-align:center;
+
+}
+
+#loaderIcon{
+
+    font-size:55px;
+
+    color:var(--cyan);
+
+    animation:spin 3s linear infinite;
+
+}
+
+#loaderCard h1{
+
+    margin-top:18px;
+
+    color:white;
+
+    font-size:22px;
+
+}
+
+#loaderCard p{
+
+    margin-top:12px;
+
+    color:#cfd8dc;
+
+    font-size:15px;
+
+}
+
+#loaderBar{
+
+    width:100%;
+
+    height:12px;
+
+    margin-top:24px;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    background:#1e293b;
+
+}
+
+#loaderProgress{
+
+    width:0%;
+
+    height:100%;
+
+    background:linear-gradient(
+        90deg,
+        #00d8ff,
+        #32d26b
+    );
+
+}
+/* ========================================================= */
+/*                    BARRA SUPERIOR                         */
+/* ========================================================= */
+
+#topBar{
+
+    position:fixed;
+
+    top:10px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    width:95%;
+
+    height:52px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:0 18px;
+
+    border-radius:18px;
+
+    background:rgba(18,25,35,.70);
+
+    backdrop-filter:blur(14px);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    z-index:1000;
+
+}
+
+#statusBox{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+#statusLed{
+
+    width:14px;
+
+    height:14px;
+
+    border-radius:50%;
+
+    background:var(--red);
+
+    box-shadow:0 0 12px var(--red);
+
+}
+
+#statusText{
+
+    color:white;
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+#timerBox{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:bold;
+
+}
+
+/* ========================================================= */
+/*                 BOTONES FLOTANTES                         */
+/* ========================================================= */
+
+#floatingButtons{
+
+    position:fixed;
+
+    right:18px;
+
+    bottom:140px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+    z-index:1200;
+
+}
+
+#floatingButtons button{
+
+    width:58px;
+
+    height:58px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:rgba(15,20,30,.82);
+
+    backdrop-filter:blur(12px);
+
+    color:white;
+
+    font-size:22px;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    box-shadow:0 8px 18px rgba(0,0,0,.45);
+
+}
+
+#floatingButtons button:hover{
+
+    transform:scale(1.08);
+
+}
+
+#btnStart{
+
+    background:#20b15a;
+
+}
+
+#btnPause{
+
+    background:#ff9800;
+
+}
+
+#btnReset{
+
+    background:#d83b3b;
+
+}
+
+#btnInfo{
+
+    background:#008cff;
+
+}
+
+#btnMenu{
+
+    background:#444c5f;
+
+}
+
+/* ========================================================= */
+/*              DASHBOARD DESLIZABLE                         */
+/* ========================================================= */
+
+#dashboard{
+
+    position:fixed;
+
+    left:0;
+
+    bottom:-72vh;
+
+    width:100%;
+
+    height:72vh;
+
+    background:rgba(17,24,39,.97);
+
+    backdrop-filter:blur(16px);
+
+    border-top-left-radius:26px;
+
+    border-top-right-radius:26px;
+
+    transition:.45s;
+
+    z-index:1100;
+
+    overflow-y:auto;
+
+    box-shadow:0 -12px 35px rgba(0,0,0,.45);
+
+}
+
+/* Panel abierto */
+
+#dashboard.open{
+
+    bottom:0;
+
+}
+
+/* Pestaña para abrir */
+
+#dashboardHandle{
+
+    position:sticky;
+
+    top:0;
+
+    height:58px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    color:white;
+
+    cursor:pointer;
+
+    background:rgba(17,24,39,.98);
+
+    border-top-left-radius:26px;
+
+    border-top-right-radius:26px;
+
+}
+
+#handleBar{
+
+    width:65px;
+
+    height:6px;
+
+    border-radius:12px;
+
+    background:#9ca3af;
+
+    margin-bottom:8px;
+
+}
+
+#dashboardContent{
+
+    padding:25px;
+
+}
+/* ========================================================= */
+/*                 CONTROLES (SLIDERS)                       */
+/* ========================================================= */
+
+.controlGroup{
+
+    margin-bottom:28px;
+
+}
+
+.controlGroup label{
+
+    display:block;
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    margin-bottom:10px;
+
+}
+
+.controlGroup span{
+
+    display:block;
+
+    margin-top:10px;
+
+    text-align:right;
+
+    color:var(--cyan);
+
+    font-size:14px;
+
+    font-weight:bold;
+
+}
+
+.controlGroup input[type=range]{
+
+    width:100%;
+
+    appearance:none;
+
+    -webkit-appearance:none;
+
+    height:8px;
+
+    border-radius:20px;
+
+    background:#263244;
+
+    outline:none;
+
+}
+
+/* Chrome */
+
+.controlGroup input[type=range]::-webkit-slider-thumb{
+
+    appearance:none;
+
+    -webkit-appearance:none;
+
+    width:22px;
+
+    height:22px;
+
+    border-radius:50%;
+
+    background:var(--cyan);
+
+    border:3px solid white;
+
+    cursor:pointer;
+
+    box-shadow:0 0 12px rgba(0,216,255,.7);
+
+}
+
+/* Firefox */
+
+.controlGroup input[type=range]::-moz-range-thumb{
+
+    width:22px;
+
+    height:22px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:var(--cyan);
+
+}
+
+/* ========================================================= */
+/*                 TÍTULO RESULTADOS                         */
+/* ========================================================= */
+
+#dashboardContent h2{
+
+    color:white;
+
+    margin-top:10px;
+
+    margin-bottom:20px;
+
+    font-size:22px;
+
+}
+
+/* ========================================================= */
+/*                 TARJETAS                                 */
+/* ========================================================= */
+
+#cardsContainer{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:16px;
+
+    padding-bottom:40px;
+
+}
+
+.card{
+
+    background:#1b2433;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:18px;
+
+    padding:18px;
+
+    text-align:center;
+
+    transition:.25s;
+
+}
+
+.card:hover{
+
+    transform:translateY(-3px);
+
+    border-color:var(--cyan);
+
+}
+
+.card span{
+
+    display:block;
+
+    color:#9ca3af;
+
+    font-size:13px;
+
+}
+
+.card h3{
+
+    color:white;
+
+    font-size:26px;
+
+    margin:10px 0;
+
+}
+
+.card small{
+
+    color:var(--cyan);
+
+    font-size:13px;
+
+}
+
+/* ========================================================= */
+/*                  MODAL                                   */
+/* ========================================================= */
+
+#infoModal{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:rgba(0,0,0,.65);
+
+    backdrop-filter:blur(5px);
+
+    z-index:5000;
+
+}
+
+#infoCard{
+
+    width:min(92%,420px);
+
+    max-height:85vh;
+
+    overflow:auto;
+
+    background:#111827;
+
+    border-radius:22px;
+
+    color:white;
+
+    box-shadow:var(--shadow);
+
+}
+
+#infoHeader{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:20px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+#infoHeader h2{
+
+    font-size:20px;
+
+}
+
+#closeInfo{
+
+    width:38px;
+
+    height:38px;
+
+    border:none;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    background:#ff4545;
+
+    color:white;
+
+    font-size:18px;
+
+}
+
+#infoBody{
+
+    padding:22px;
+
+    line-height:1.7;
+
+}
+
+#infoBody h3{
+
+    margin-top:18px;
+
+    margin-bottom:10px;
+
+    color:var(--cyan);
+
+}
+
+#infoBody p{
+
+    color:#d5d8dc;
+
+    font-size:15px;
+
+}
+/* ========================================================= */
+/*                    ANIMACIONES                            */
+/* ========================================================= */
+
+@keyframes spin{
+
+    from{
+
+        transform:rotate(0deg);
+
+    }
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+@keyframes pulse{
+
+    0%{
+
+        transform:scale(1);
+
+        opacity:1;
+
+    }
+
+    50%{
+
+        transform:scale(1.12);
+
+        opacity:.8;
+
+    }
+
+    100%{
+
+        transform:scale(1);
+
+        opacity:1;
+
+    }
+
+}
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+    }
+
+    to{
+
+        opacity:1;
+
+    }
+
+}
+
+@keyframes slideUp{
+
+    from{
+
+        transform:translateY(50px);
+
+        opacity:0;
+
+    }
+
+    to{
+
+        transform:translateY(0);
+
+        opacity:1;
+
+    }
+
+}
+
+/* ========================================================= */
+/*                  EFECTOS VISUALES                         */
+/* ========================================================= */
+
+#statusLed{
+
+    animation:pulse 2s infinite;
+
+}
+
+#floatingButtons button{
+
+    transition:
+    transform .25s,
+    box-shadow .25s,
+    background .25s;
+
+}
+
+#floatingButtons button:active{
+
+    transform:scale(.90);
+
+}
+
+.card{
+
+    animation:fadeIn .4s ease;
+
+}
+
+#infoCard{
+
+    animation:slideUp .35s ease;
+
+}
+
+/* ========================================================= */
+/*                 SCROLL DEL DASHBOARD                      */
+/* ========================================================= */
+
+#dashboard::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+#dashboard::-webkit-scrollbar-thumb{
+
+    background:#3a475a;
+
+    border-radius:20px;
+
+}
+
+#dashboard::-webkit-scrollbar-track{
+
+    background:transparent;
+
+}
+
+/* ========================================================= */
+/*                 RESPONSIVE TABLET                         */
+/* ========================================================= */
+
+@media (min-width:768px){
+
+    #dashboard{
+
+        width:420px;
+
+        height:100%;
+
+        right:0;
+
+        left:auto;
+
+        bottom:0;
+
+        border-radius:0;
+
+        transform:translateX(100%);
+
+    }
+
+    #dashboard.open{
+
+        transform:translateX(0);
+
+    }
+
+    #dashboardHandle{
+
+        display:none;
+
+    }
+
+    #floatingButtons{
+
+        right:30px;
+
+        bottom:30px;
+
+    }
+
+    #cardsContainer{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+}
+
+/* ========================================================= */
+/*              RESPONSIVE COMPUTADOR                        */
+/* ========================================================= */
+
+@media (min-width:1200px){
+
+    #topBar{
+
+        width:650px;
+
+    }
+
+    #dashboard{
+
+        width:430px;
+
+    }
+
+    #cardsContainer{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+}
+
+/* ========================================================= */
+/*             TELÉFONOS MUY PEQUEÑOS                        */
+/* ========================================================= */
+
+@media (max-width:480px){
+
+    #topBar{
+
+        height:46px;
+
+        padding:0 12px;
+
+    }
+
+    #statusText{
+
+        font-size:12px;
+
+    }
+
+    #timerBox{
+
+        font-size:13px;
+
+    }
+
+    #floatingButtons{
+
+        right:12px;
+
+        bottom:110px;
+
+        gap:10px;
+
+    }
+
+    #floatingButtons button{
+
+        width:50px;
+
+        height:50px;
+
+        font-size:19px;
+
+    }
+
+    #dashboard{
+
+        height:68vh;
+
+    }
+
+    #cardsContainer{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+/* ========================================================= */
+/*           OCULTAR UI EN PANTALLA COMPLETA                 */
+/* ========================================================= */
+
+body.fullscreen #topBar{
+
+    opacity:.92;
+
+}
+
+body.fullscreen #floatingButtons{
+
+    opacity:.92;
+
+}
+
+/* ========================================================= */
+/*                  FIN DEL STYLE.CSS                        */
+/* ========================================================= */
