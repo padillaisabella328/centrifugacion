@@ -207,7 +207,7 @@ function resetParticles() {
 }
 
 // Sliders y Botones
-btnStart.addEventListener("click", () => { if(!markerDetected) return; running = true; startTimer(); });
+btnStart.addEventListener("click", () => { running = true; startTimer(); });
 btnPause.addEventListener("click", () => { running = false; stopTimer(); });
 btnReset.addEventListener("click", () => {
     running = false;
