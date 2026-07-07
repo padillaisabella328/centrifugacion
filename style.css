@@ -8,14 +8,14 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Roboto', sans-serif;
-    user-select: none; /* Evita que el texto se seleccione al tocar en el celular */
+    user-select: none;
 }
 
 body, html {
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Fundamental para que la cámara AR no haga scroll */
-    background-color: #000;
+    overflow: hidden; 
+    background-color: transparent; /* CORRECCIÓN: Permite ver la cámara AR */
 }
 
 /* =======================================================
@@ -32,11 +32,7 @@ body, html {
     transition: opacity 0.5s ease;
 }
 
-#loaderCard {
-    text-align: center;
-    color: white;
-}
-
+#loaderCard { text-align: center; color: white; }
 #loaderIcon {
     font-size: 4rem;
     color: #38bdf8;
@@ -44,134 +40,62 @@ body, html {
     animation: spin 2s linear infinite;
 }
 
-@keyframes spin { 
-    100% { transform: rotate(360deg); } 
-}
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
 #loader h1 { font-size: 1.5rem; margin-bottom: 10px; }
 #loader p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px; }
-
-#loaderBar {
-    width: 200px; height: 6px;
-    background: #1e293b;
-    border-radius: 10px;
-    margin: 0 auto;
-    overflow: hidden;
-}
-
-#loaderProgress {
-    width: 0%; height: 100%;
-    background: #38bdf8;
-    border-radius: 10px;
-    transition: width 0.1s linear;
-}
+#loaderBar { width: 200px; height: 6px; background: #1e293b; border-radius: 10px; margin: 0 auto; overflow: hidden; }
+#loaderProgress { width: 0%; height: 100%; background: #38bdf8; border-radius: 10px; transition: width 0.1s linear; }
 
 /* =======================================================
    BARRA SUPERIOR (ESTADO Y TEMPORIZADOR)
 ======================================================= */
 #topBar {
     position: fixed;
-    top: 20px; left: 50%;
-    transform: translateX(-50%);
+    top: 20px; left: 50%; transform: translateX(-50%);
     width: 90%; max-width: 400px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 1000;
+    display: flex; justify-content: space-between; z-index: 1000;
 }
 
 #statusBox, #timerBox {
     background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    padding: 8px 15px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: white;
-    font-size: 0.85rem;
-    font-weight: 500;
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    padding: 8px 15px; border-radius: 20px;
+    display: flex; align-items: center; gap: 8px;
+    color: white; font-size: 0.85rem; font-weight: 500;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-#statusLed {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: #ff4545;
-    box-shadow: 0 0 10px #ff4545;
-    transition: background 0.3s;
-}
-
+#statusLed { width: 12px; height: 12px; border-radius: 50%; background: #ff4545; box-shadow: 0 0 10px #ff4545; transition: background 0.3s; }
 #timerBox i { color: #38bdf8; }
 
 /* =======================================================
-   BOTONES FLOTANTES LATERALES (PLAY, PAUSE, RESET)
+   BOTONES FLOTANTES LATERALES
 ======================================================= */
 #floatingButtons {
-    position: fixed;
-    right: 15px; top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    z-index: 1000;
+    position: fixed; right: 15px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 15px; z-index: 1000;
 }
 
 #floatingButtons button {
-    width: 50px; height: 50px;
-    border-radius: 50%;
-    border: none;
+    width: 50px; height: 50px; border-radius: 50%; border: none;
     background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    color: white;
-    font-size: 1.2rem;
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    color: white; font-size: 1.2rem;
     border: 1px solid rgba(255,255,255,0.1);
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-#floatingButtons button:active {
-    transform: scale(0.9);
-    background: #38bdf8;
-}
+#floatingButtons button:active { transform: scale(0.9); background: #38bdf8; }
 
 /* =======================================================
    MODAL INFORMATIVO POP-UP
 ======================================================= */
-#infoModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
-}
-
-#infoCard {
-    background: #1e293b;
-    width: 90%; max-width: 400px;
-    border-radius: 15px;
-    overflow: hidden;
-    color: white;
-}
-
-#infoHeader {
-    background: #0f172a;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
+#infoModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
+#infoCard { background: #1e293b; width: 90%; max-width: 400px; border-radius: 15px; overflow: hidden; color: white; }
+#infoHeader { background: #0f172a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
 #infoHeader h2 { font-size: 1.1rem; }
-#closeInfo {
-    background: none; border: none; color: white;
-    font-size: 1.2rem; cursor: pointer;
-}
-
+#closeInfo { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
 #infoBody { padding: 20px; }
 #infoBody h3 { color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px; margin-top: 15px;}
 #infoBody h3:first-child { margin-top: 0; }
@@ -181,156 +105,56 @@ body, html {
    HUD LATERAL (RESULTADOS TELEMÉTRICOS)
 ======================================================= */
 #telemetrySide {
-    position: fixed;
-    left: 10px;
-    top: 55%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 900;
-    pointer-events: none; /* Permite arrastrar la cámara por encima de los datos */
+    position: fixed; left: 10px; top: 55%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 900; pointer-events: none;
 }
-
 .sideCard {
     background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 6px 12px;
-    color: white;
-    text-align: left;
-    min-width: 110px;
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;
+    padding: 6px 12px; color: white; text-align: left; min-width: 110px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-
-.sideCard span {
-    display: block;
-    font-size: 0.65rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    font-weight: bold;
-    letter-spacing: 0.5px;
-}
-
-.sideCard h3 {
-    margin: 2px 0;
-    font-size: 1rem;
-    color: #38bdf8;
-}
-
-.sideCard small {
-    font-size: 0.6rem;
-    color: #cbd5e1;
-}
+.sideCard span { display: block; font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
+.sideCard h3 { margin: 2px 0; font-size: 1rem; color: #38bdf8; }
+.sideCard small { font-size: 0.6rem; color: #cbd5e1; }
 
 /* =======================================================
-   PANEL DE CONTROL INFERIOR (2 COLUMNAS - SLIDERS)
+   PANEL DE CONTROL INFERIOR (2 COLUMNAS)
 ======================================================= */
 #dashboard {
-    position: fixed;
-    bottom: -100%;
-    left: 0;
-    width: 100%;
-    max-height: 35vh; /* Se asoma solo a 1/3 de la pantalla */
+    position: fixed; bottom: -100%; left: 0; width: 100%;
+    max-height: 35vh; 
     background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top-left-radius: 20px; border-top-right-radius: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.15);
     transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
+    z-index: 1000; display: flex; flex-direction: column;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
 }
-
-#dashboard.open {
-    bottom: 0;
-}
-
+#dashboard.open { bottom: 0; }
 #dashboardHandle {
-    width: 100%;
-    height: 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: transparent;
+    width: 100%; height: 40px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer; background: transparent;
 }
-
-#handleBar {
-    width: 40px;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 10px;
-    margin-bottom: 5px;
-}
-
-#dashboardHandle span {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 500;
-}
-
+#handleBar { width: 40px; height: 5px; background: rgba(255, 255, 255, 0.5); border-radius: 10px; margin-bottom: 5px; }
+#dashboardHandle span { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); font-weight: 500; }
 #dashboardContent {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 15px;
-    padding: 10px 20px 30px 20px;
-    overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px 15px;
+    padding: 10px 20px 30px 20px; overflow-y: auto;
 }
-
-.controlGroup {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0;
-}
-
-.controlGroup label {
-    color: #e2e8f0;
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin-bottom: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
+.controlGroup { display: flex; flex-direction: column; margin-bottom: 0; }
+.controlGroup label { color: #e2e8f0; font-size: 0.75rem; font-weight: 500; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .controlGroup input[type="range"] {
-    width: 100%;
-    appearance: none;
-    background: rgba(255, 255, 255, 0.1);
-    height: 6px;
-    border-radius: 5px;
-    outline: none;
-    margin: 5px 0;
+    width: 100%; appearance: none; background: rgba(255, 255, 255, 0.1);
+    height: 6px; border-radius: 5px; outline: none; margin: 5px 0;
 }
-
 .controlGroup input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #0ea5e9;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+    appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #0ea5e9; cursor: pointer; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
 }
-
-.controlGroup span {
-    color: #38bdf8;
-    font-size: 0.75rem;
-    font-weight: bold;
-    text-align: right;
-    margin-top: 2px;
-}
-
+.controlGroup span { color: #38bdf8; font-size: 0.75rem; font-weight: bold; text-align: right; margin-top: 2px; }
 #dashboardContent::-webkit-scrollbar { width: 4px; }
 #dashboardContent::-webkit-scrollbar-track { background: transparent; }
-#dashboardContent::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-}
+#dashboardContent::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
