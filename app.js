@@ -1,6 +1,5 @@
 /* ===========================================================
-   GEMELO DIGITAL DE CENTRIFUGACIÓN - ALTO RENDIMIENTO V4
-   (FIX: Pausa instantánea, Anti-Lag de GPU y Zoom Táctil)
+   GEMELO DIGITAL DE CENTRIFUGACIÓN - SEPARACIÓN DIFERENCIAL
 =========================================================== */
 
 let running = false;
@@ -12,7 +11,6 @@ let elapsedTime = 0;
 let timerInterval = null;
 const gravity = 9.81;
 
-// Parámetros de Operación
 let process = {
     radius : 0.30,
     densityDifference : 800,
@@ -27,14 +25,12 @@ let process = {
     cakeThickness: 0 
 };
 
-// Población
 let PARTICLES_COUNT = 350; 
 let DRUM_MAX_RADIUS = 0.29; 
 const MAX_CAKE_THICKNESS = 0.04; 
 let particles = [];
 const rho_fluid = 1000; 
 
-// Elementos DOM
 const rotor = document.getElementById("rotor");
 const marker = document.getElementById("hiroMarker");
 const loader = document.getElementById("loader");
@@ -78,7 +74,6 @@ function updateDashboard() {
     if (cakeEl) cakeEl.textContent = (process.cakeThickness * 1000).toFixed(1);
 }
 
-// Loader Animación
 let load = 0;
 const loaderAnimation = setInterval(() => {
     load += Math.random() * 12;
@@ -90,7 +85,6 @@ const loaderAnimation = setInterval(() => {
     if (loaderProgress) loaderProgress.style.width = load + "%";
 }, 60);
 
-// Eventos Interfaz
 if (document.getElementById("dashboardHandle")) document.getElementById("dashboardHandle").addEventListener("click", () => dashboard.classList.toggle("open"));
 if (btnMenu) btnMenu.addEventListener("click", () => dashboard.classList.toggle("open"));
 
@@ -131,9 +125,6 @@ function startTimer() {
 function stopTimer() { clearInterval(timerInterval); }
 function resetTimer() { elapsedTime = 0; if (timer) timer.textContent = "00:00:00"; }
 
-/* ===========================================================
-   CÁLCULOS TERMODINÁMICOS
-=========================================================== */
 function calculatePhysics() {
     process.omega = 2 * Math.PI * (targetRPM / 60);
     process.nominalAcceleration = process.radius * process.omega * process.omega;
@@ -152,7 +143,6 @@ function calculatePhysics() {
 
 const ACCELERATION = 250;
 function updateRotor(delta) {
-    // Si cambiamos el slider mientras corre, se ajusta suavemente
     if (currentRPM < targetRPM) {
         currentRPM += ACCELERATION * delta;
         if (currentRPM > targetRPM) currentRPM = targetRPM;
@@ -164,9 +154,6 @@ function updateRotor(delta) {
     if (rotor) rotor.setAttribute("rotation", `0 ${rotorAngle} 0`);
 }
 
-/* ===========================================================
-   SISTEMA DE PARTÍCULAS (OPTIMIZADO PARA GPU)
-=========================================================== */
 function createParticles() {
     const container = document.getElementById("particles1");
     if (!container) return;
@@ -183,8 +170,9 @@ function createParticles() {
         const r = 0.02 + Math.random() * (DRUM_MAX_RADIUS - 0.1); 
         const y = (Math.random() * 0.38) - 0.19; 
         
-        const baseSize = isTypeA ? 0.005 : 0.003;
-        const color = isTypeA ? "#ff5252" : "#7c4dff"; 
+        // CORRECCIÓN: Partículas pesadas (Rojas) claramente más grandes que las ligeras (Moradas)
+        const baseSize = isTypeA ? 0.007 : 0.0025;
+        const color = isTypeA ? "#ff5252" : "#a855f7"; 
         const cakeColor = isTypeA ? "#991b1b" : "#4c1d95"; 
         
         p.setAttribute("radius", baseSize * currentScale);
@@ -213,7 +201,6 @@ function updateEngineeringParticles(delta) {
     
     let sedimentedCount = 0;
     
-    // PRE-CÁLCULOS: Sacamos estas matemáticas del bucle masivo para evitar Lag
     const n_exponent = process.reynoldsParticle < 0.2 ? 4.65 : 2.5;
     const vFree = process.nominalStokesVelocity * Math.pow((1 - 0.05), n_exponent);
     const vDense = process.nominalStokesVelocity * Math.pow((1 - 0.45), n_exponent);
@@ -226,21 +213,19 @@ function updateEngineeringParticles(delta) {
         if (p.state === "free") {
             const localAcceleration = omegaSq * p.r;
             const positionCorrection = nomAccel > 0 ? (localAcceleration / nomAccel) : 0;
-            
             const hinderedVelocity = (p.r > currentRadiusLimit - 0.02) ? vDense : vFree;
-            const sizeMultiplier = p.type === 'A' ? 1.0 : 0.35;
+            
+            // CORRECCIÓN FÍSICA VISUAL: Las rojas viajan al 100%, las moradas al 3% (flotan en el fluido)
+            const sizeMultiplier = p.type === 'A' ? 1.0 : 0.03;
             
             p.r += (hinderedVelocity * sizeMultiplier * positionCorrection) * delta * 25; 
             
+            // Solo forman parte de la "Torta" sólida las que alcanzan el radio límite
             if (p.r >= currentRadiusLimit) {
                 p.r = currentRadiusLimit;
                 p.state = "cake"; 
-                
-                // ANTI-LAG: Modificamos el material 3D directamente en la GPU, evitamos el DOM.
                 const mesh = p.entity.getObject3D('mesh');
-                if (mesh && mesh.material) {
-                    mesh.material.color.set(p.cakeColor);
-                }
+                if (mesh && mesh.material) mesh.material.color.set(p.cakeColor);
             }
         }
         
@@ -249,11 +234,13 @@ function updateEngineeringParticles(delta) {
             p.r = currentRadiusLimit; 
         }
 
-        // Actualización de posición final
         p.entity.object3D.position.set(Math.cos(p.angle) * p.r, p.y, Math.sin(p.angle) * p.r);
     });
 
-    process.cakeThickness = (sedimentedCount / PARTICLES_COUNT) * MAX_CAKE_THICKNESS;
+    // La torta ahora crece basada únicamente en la masa de las partículas pesadas sedimentadas
+    process.cakeThickness = (sedimentedCount / (PARTICLES_COUNT / 2)) * MAX_CAKE_THICKNESS;
+    // Límite de seguridad visual
+    if (process.cakeThickness > MAX_CAKE_THICKNESS) process.cakeThickness = MAX_CAKE_THICKNESS;
 }
 
 function resetParticles() {
@@ -261,18 +248,12 @@ function resetParticles() {
     particles.forEach(p => {
         p.r = 0.02 + Math.random() * (DRUM_MAX_RADIUS - 0.1);
         p.state = "free";
-        
-        // Regresar color por GPU
         const mesh = p.entity.getObject3D('mesh');
         if (mesh && mesh.material) mesh.material.color.set(p.originalColor);
-        
         p.entity.object3D.position.set(Math.cos(p.angle) * p.r, p.y, Math.sin(p.angle) * p.r);
     });
 }
 
-/* ===========================================================
-   EVENTOS BOTONES Y CONTROLES DESLIZANTES
-=========================================================== */
 if (btnStart) btnStart.addEventListener("click", () => { running = true; startTimer(); });
 if (btnPause) btnPause.addEventListener("click", () => { running = false; stopTimer(); });
 if (btnReset) {
@@ -347,9 +328,6 @@ if (document.getElementById("viscositySlider")) {
     });
 }
 
-/* ===========================================================
-   SISTEMA DE CONTROL: ROTACIÓN LIBRE Y ZOOM
-=========================================================== */
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
 let currentZoom = 1; 
@@ -359,7 +337,6 @@ const centrifugeContainer = document.getElementById("centrifuge");
 function startDrag(e) {
     if (e.target.closest('#dashboard') || e.target.closest('#floatingButtons') || e.target.closest('#infoModal')) return;
     if (e.touches && e.touches.length >= 2) return; 
-
     isDragging = true;
     previousMousePosition = { x: e.touches ? e.touches[0].clientX : e.clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
 }
@@ -371,8 +348,6 @@ function stopDrag(e) {
 
 function drag(e) {
     if (!centrifugeContainer) return;
-
-    // ZOOM CELULAR (Pellizco)
     if (e.touches && e.touches.length === 2) {
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
@@ -389,8 +364,6 @@ function drag(e) {
         }
         return; 
     }
-
-    // ROTACIÓN (Arrastre)
     if (!isDragging) return; 
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -406,10 +379,8 @@ function drag(e) {
     previousMousePosition = { x: clientX, y: clientY };
 }
 
-// ZOOM COMPUTADOR (Rueda del ratón)
 document.addEventListener("wheel", (e) => {
     if (e.target.closest('#dashboard') || e.target.closest('#floatingButtons') || e.target.closest('#infoModal')) return;
-    
     currentZoom += e.deltaY * -0.001;
     currentZoom = Math.min(Math.max(0.4, currentZoom), 3.0); 
     if (centrifugeContainer) centrifugeContainer.setAttribute("scale", `${currentZoom} ${currentZoom} ${currentZoom}`);
@@ -422,22 +393,14 @@ document.addEventListener("touchstart", startDrag, { passive: false });
 document.addEventListener("touchend", stopDrag);
 document.addEventListener("touchmove", drag, { passive: false });
 
-/* ===========================================================
-   NÚCLEO DE ANIMACIÓN Y FÍSICA
-=========================================================== */
 let previousTime = performance.now();
 
 function animate(now) {
     let delta = (now - previousTime) / 1000;
     previousTime = now;
-    
-    // ANTI-LAG GEOMÉTRICO: Límite de salto por caída de frames
     if (delta > 0.1) delta = 0.1; 
-
-    // Calculamos la física siempre, para que el panel se actualice al instante al mover un slider
     calculatePhysics(); 
 
-    // CONGELAMIENTO INSTANTÁNEO: Solo rotamos y movemos partículas si está en Play
     if (running) {
         updateRotor(delta);
         updateEngineeringParticles(delta);
